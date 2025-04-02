@@ -11,7 +11,7 @@ import { User } from 'src/apis/user/entities/user.entity';
       port: 5432,
       username: 'adityasingh393',
       password: 'Aditya@20',
-      database: 'testing',
+      database: 'tw-auth',
       // entities: [__dirname + '/**/*.entity{.ts,.js}'],
       entities: [User],
       migrations: [__dirname + '/migrations/*.ts'],

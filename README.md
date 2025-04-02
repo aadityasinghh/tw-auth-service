@@ -96,3 +96,307 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+```
+booking_landing-auth
+├─ .prettierrc
+├─ README.md
+├─ dist
+│  ├─ apis
+│  │  ├─ api.module.d.ts
+│  │  ├─ api.module.js
+│  │  ├─ api.module.js.map
+│  │  └─ user
+│  │     ├─ entities
+│  │     │  ├─ user.entity.d.ts
+│  │     │  ├─ user.entity.js
+│  │     │  └─ user.entity.js.map
+│  │     ├─ user.controller.d.ts
+│  │     ├─ user.controller.js
+│  │     ├─ user.controller.js.map
+│  │     ├─ user.module.d.ts
+│  │     ├─ user.module.js
+│  │     ├─ user.module.js.map
+│  │     ├─ user.service.d.ts
+│  │     ├─ user.service.js
+│  │     └─ user.service.js.map
+│  ├─ app.controller.d.ts
+│  ├─ app.controller.js
+│  ├─ app.controller.js.map
+│  ├─ app.module.d.ts
+│  ├─ app.module.js
+│  ├─ app.module.js.map
+│  ├─ app.service.d.ts
+│  ├─ app.service.js
+│  ├─ app.service.js.map
+│  ├─ core
+│  │  ├─ core.module.d.ts
+│  │  ├─ core.module.js
+│  │  ├─ core.module.js.map
+│  │  └─ db
+│  │     ├─ db.config.d.ts
+│  │     ├─ db.config.js
+│  │     ├─ db.config.js.map
+│  │     ├─ db.module.d.ts
+│  │     ├─ db.module.js
+│  │     ├─ db.module.js.map
+│  │     └─ migrations
+│  │        ├─ 1743156985273-Migration.d.ts
+│  │        ├─ 1743156985273-Migration.js
+│  │        ├─ 1743156985273-Migration.js.map
+│  │        ├─ 1743157927322-Migration.d.ts
+│  │        ├─ 1743157927322-Migration.js
+│  │        └─ 1743157927322-Migration.js.map
+│  ├─ main.d.ts
+│  ├─ main.js
+│  ├─ main.js.map
+│  └─ tsconfig.build.tsbuildinfo
+├─ eslint.config.mjs
+├─ nest-cli.json
+├─ package-lock.json
+├─ package.json
+├─ src
+│  ├─ apis
+│  │  ├─ api.module.ts
+│  │  ├─ test
+│  │  └─ user
+│  │     ├─ entities
+│  │     │  └─ user.entity.ts
+│  │     ├─ user.controller.ts
+│  │     ├─ user.module.ts
+│  │     └─ user.service.ts
+│  ├─ app.controller.ts
+│  ├─ app.module.ts
+│  ├─ app.service.ts
+│  ├─ core
+│  │  ├─ core.module.ts
+│  │  ├─ db
+│  │  │  ├─ db.config.ts
+│  │  │  ├─ db.module.ts
+│  │  │  └─ migrations
+│  │  │     ├─ 1743156985273-Migration.ts
+│  │  │     └─ 1743157927322-Migration.ts
+│  │  └─ redis
+│  └─ main.ts
+├─ test
+│  ├─ app.e2e-spec.ts
+│  └─ jest-e2e.json
+├─ tsconfig.build.json
+└─ tsconfig.json
+
+```
+```
+booking_landing-auth
+├─ .prettierrc
+├─ README.md
+├─ dist
+│  ├─ apis
+│  │  ├─ api.module.d.ts
+│  │  ├─ api.module.js
+│  │  ├─ api.module.js.map
+│  │  └─ user
+│  │     ├─ dto
+│  │     │  ├─ create-user.dto.d.ts
+│  │     │  ├─ create-user.dto.js
+│  │     │  └─ create-user.dto.js.map
+│  │     ├─ entities
+│  │     │  ├─ user.entity.d.ts
+│  │     │  ├─ user.entity.js
+│  │     │  └─ user.entity.js.map
+│  │     ├─ user.controller.d.ts
+│  │     ├─ user.controller.js
+│  │     ├─ user.controller.js.map
+│  │     ├─ user.module.d.ts
+│  │     ├─ user.module.js
+│  │     ├─ user.module.js.map
+│  │     ├─ user.service.d.ts
+│  │     ├─ user.service.js
+│  │     └─ user.service.js.map
+│  ├─ app.controller.d.ts
+│  ├─ app.controller.js
+│  ├─ app.controller.js.map
+│  ├─ app.module.d.ts
+│  ├─ app.module.js
+│  ├─ app.module.js.map
+│  ├─ app.service.d.ts
+│  ├─ app.service.js
+│  ├─ app.service.js.map
+│  ├─ core
+│  │  ├─ auth
+│  │  │  ├─ auth.module.d.ts
+│  │  │  ├─ auth.module.js
+│  │  │  └─ auth.module.js.map
+│  │  ├─ common
+│  │  │  └─ dto
+│  │  │     ├─ api-response.dto.d.ts
+│  │  │     ├─ api-response.dto.js
+│  │  │     └─ api-response.dto.js.map
+│  │  ├─ core.module.d.ts
+│  │  ├─ core.module.js
+│  │  ├─ core.module.js.map
+│  │  └─ db
+│  │     ├─ db.config.d.ts
+│  │     ├─ db.config.js
+│  │     ├─ db.config.js.map
+│  │     ├─ db.module.d.ts
+│  │     ├─ db.module.js
+│  │     ├─ db.module.js.map
+│  │     └─ migrations
+│  │        ├─ 1743156985273-Migration.d.ts
+│  │        ├─ 1743156985273-Migration.js
+│  │        ├─ 1743156985273-Migration.js.map
+│  │        ├─ 1743157927322-Migration.d.ts
+│  │        ├─ 1743157927322-Migration.js
+│  │        └─ 1743157927322-Migration.js.map
+│  ├─ main.d.ts
+│  ├─ main.js
+│  ├─ main.js.map
+│  └─ tsconfig.build.tsbuildinfo
+├─ eslint.config.mjs
+├─ nest-cli.json
+├─ package-lock.json
+├─ package.json
+├─ src
+│  ├─ apis
+│  │  ├─ api.module.ts
+│  │  ├─ test
+│  │  └─ user
+│  │     ├─ dto
+│  │     │  └─ create-user.dto.ts
+│  │     ├─ entities
+│  │     │  └─ user.entity.ts
+│  │     ├─ user.controller.ts
+│  │     ├─ user.module.ts
+│  │     └─ user.service.ts
+│  ├─ app.controller.ts
+│  ├─ app.module.ts
+│  ├─ app.service.ts
+│  ├─ core
+│  │  ├─ auth
+│  │  │  └─ auth.module.ts
+│  │  ├─ common
+│  │  │  └─ dto
+│  │  │     └─ api-response.dto.ts
+│  │  ├─ core.module.ts
+│  │  ├─ db
+│  │  │  ├─ db.config.ts
+│  │  │  ├─ db.module.ts
+│  │  │  └─ migrations
+│  │  └─ redis
+│  └─ main.ts
+├─ test
+│  ├─ app.e2e-spec.ts
+│  └─ jest-e2e.json
+├─ tsconfig.build.json
+└─ tsconfig.json
+
+```
+```
+booking_landing-auth
+├─ .prettierrc
+├─ README.md
+├─ dist
+│  ├─ apis
+│  │  ├─ api.module.d.ts
+│  │  ├─ api.module.js
+│  │  ├─ api.module.js.map
+│  │  └─ user
+│  │     ├─ dto
+│  │     │  ├─ create-user.dto.d.ts
+│  │     │  ├─ create-user.dto.js
+│  │     │  └─ create-user.dto.js.map
+│  │     ├─ entities
+│  │     │  ├─ user.entity.d.ts
+│  │     │  ├─ user.entity.js
+│  │     │  └─ user.entity.js.map
+│  │     ├─ user.controller.d.ts
+│  │     ├─ user.controller.js
+│  │     ├─ user.controller.js.map
+│  │     ├─ user.module.d.ts
+│  │     ├─ user.module.js
+│  │     ├─ user.module.js.map
+│  │     ├─ user.service.d.ts
+│  │     ├─ user.service.js
+│  │     └─ user.service.js.map
+│  ├─ app.controller.d.ts
+│  ├─ app.controller.js
+│  ├─ app.controller.js.map
+│  ├─ app.module.d.ts
+│  ├─ app.module.js
+│  ├─ app.module.js.map
+│  ├─ app.service.d.ts
+│  ├─ app.service.js
+│  ├─ app.service.js.map
+│  ├─ core
+│  │  ├─ auth
+│  │  │  ├─ auth.module.d.ts
+│  │  │  ├─ auth.module.js
+│  │  │  └─ auth.module.js.map
+│  │  ├─ common
+│  │  │  └─ dto
+│  │  │     ├─ api-response.dto.d.ts
+│  │  │     ├─ api-response.dto.js
+│  │  │     └─ api-response.dto.js.map
+│  │  ├─ core.module.d.ts
+│  │  ├─ core.module.js
+│  │  ├─ core.module.js.map
+│  │  └─ db
+│  │     ├─ db.config.d.ts
+│  │     ├─ db.config.js
+│  │     ├─ db.config.js.map
+│  │     ├─ db.module.d.ts
+│  │     ├─ db.module.js
+│  │     ├─ db.module.js.map
+│  │     └─ migrations
+│  │        ├─ 1743156985273-Migration.d.ts
+│  │        ├─ 1743156985273-Migration.js
+│  │        ├─ 1743156985273-Migration.js.map
+│  │        ├─ 1743157927322-Migration.d.ts
+│  │        ├─ 1743157927322-Migration.js
+│  │        └─ 1743157927322-Migration.js.map
+│  ├─ main.d.ts
+│  ├─ main.js
+│  ├─ main.js.map
+│  └─ tsconfig.build.tsbuildinfo
+├─ eslint.config.mjs
+├─ nest-cli.json
+├─ package-lock.json
+├─ package.json
+├─ src
+│  ├─ apis
+│  │  ├─ api.module.ts
+│  │  ├─ test
+│  │  └─ user
+│  │     ├─ dto
+│  │     │  ├─ create-user.dto.ts
+│  │     │  ├─ login-user.dto.ts
+│  │     │  ├─ update-user.dto.ts
+│  │     │  └─ user-response.dto.ts
+│  │     ├─ entities
+│  │     │  └─ user.entity.ts
+│  │     ├─ user.controller.ts
+│  │     ├─ user.module.ts
+│  │     └─ user.service.ts
+│  ├─ app.controller.ts
+│  ├─ app.module.ts
+│  ├─ app.service.ts
+│  ├─ core
+│  │  ├─ auth
+│  │  │  └─ auth.module.ts
+│  │  ├─ common
+│  │  │  └─ dto
+│  │  │     └─ api-response.dto.ts
+│  │  ├─ core.module.ts
+│  │  ├─ db
+│  │  │  ├─ db.config.ts
+│  │  │  ├─ db.module.ts
+│  │  │  └─ migrations
+│  │  └─ redis
+│  └─ main.ts
+├─ test
+│  ├─ app.e2e-spec.ts
+│  └─ jest-e2e.json
+├─ tsconfig.build.json
+└─ tsconfig.json
+
+```
