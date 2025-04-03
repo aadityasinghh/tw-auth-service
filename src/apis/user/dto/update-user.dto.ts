@@ -1,4 +1,3 @@
-// src/apis/user/dto/update-user.dto.ts
 import {
   IsEmail,
   IsOptional,

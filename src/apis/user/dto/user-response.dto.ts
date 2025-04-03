@@ -1,4 +1,3 @@
-// src/apis/user/dto/user-response.dto.ts
 import { Exclude, Expose } from 'class-transformer';
 import {
   User,
