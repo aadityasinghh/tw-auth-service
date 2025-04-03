@@ -1,8 +1,3 @@
-// import { Injectable } from '@nestjs/common';
-
-// @Injectable()
-// export class AuthService {}
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../apis/user/user.service';
@@ -33,17 +28,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...result } = user;
     return result;
   }
 
   login(user: any) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const payload = { email: user.email, sub: user.user_id };
     return {
       access_token: this.jwtService.sign(payload),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       user,
     };
   }

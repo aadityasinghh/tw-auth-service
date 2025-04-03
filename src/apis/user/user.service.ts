@@ -1,28 +1,3 @@
-// import { Injectable } from '@nestjs/common';
-// import { DataSource, Repository } from 'typeorm';
-// import { User } from './entities/user.entity';
-// import { InjectRepository } from '@nestjs/typeorm';
-
-// @Injectable()
-// export class UserService {
-//   constructor(
-//     private readonly dataSource: DataSource,
-//     @InjectRepository(User) private userRepository: Repository<User>,
-//   ) {}
-
-//   async getUsers(): Promise<User[]> {
-//     return await this.userRepository.find();
-//   }
-
-//   async createUser(
-//     email: string,
-//     password: string,
-//     phone: string,
-//   ): Promise<User> {
-//     const newUser = this.userRepository.create({ email, password, phone });
-//     return await this.userRepository.save(newUser);
-//   }
-// }
 import {
   BadRequestException,
   ConflictException,
@@ -44,7 +19,8 @@ export class UserService {
   ) {}
 
   async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+    const data= await this.userRepository.find();
+    return data
   }
 
   async findById(id: string): Promise<User> {
@@ -130,9 +106,9 @@ export class UserService {
     }
 
     // Check if phone exists
-    if (updateUserDto.phone && updateUserDto.phone !== user?.phone_number) {
+    if (updateUserDto.phone_number && updateUserDto.phone_number !== user?.phone_number) {
       const phoneExists = await this.userRepository.findOne({
-        where: { phone_number: updateUserDto.phone },
+        where: { phone_number: updateUserDto.phone_number },
       });
       if (phoneExists) {
         throw new ConflictException('Phone number already exists');
@@ -141,11 +117,11 @@ export class UserService {
 
     // Check if Aadhaar exists
     if (
-      updateUserDto.aadharNumber &&
-      updateUserDto.aadharNumber !== user.aadhaar_number
+      updateUserDto.aadhar_number &&
+      updateUserDto.aadhar_number !== user.aadhaar_number
     ) {
       const aadhaarExists = await this.userRepository.findOne({
-        where: { aadhaar_number: updateUserDto.aadharNumber },
+        where: { aadhaar_number: updateUserDto.aadhar_number },
       });
       if (aadhaarExists) {
         throw new ConflictException('Aadhaar number already exists');

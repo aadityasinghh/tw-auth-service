@@ -10,40 +10,34 @@ import {
 @Exclude()
 export class UserResponseDto {
   @Expose()
-  id: string;
+  user_id: string;
 
   @Expose()
-  firstName: string;
-
-  @Expose()
-  lastName: string;
+  name: string;
 
   @Expose()
   email: string;
 
   @Expose()
-  phone: string;
-
-  @Expose()
-  role: UserRole;
+  phone_number: string;
 
   @Expose()
   status: UserStatus;
 
   @Expose()
-  aadharNumber?: string;
+  aadhar_number?: string;
 
   @Expose()
-  aadharVerificationStatus?: AadharVerificationStatus;
+  aadhaar_verified?: AadharVerificationStatus;
 
   @Expose()
-  profilePicture?: string;
+  profile_picture_url?: string;
 
   @Expose()
-  createdAt: Date;
+  created_at: Date;
 
   @Expose()
-  updatedAt: Date;
+  updated_at: Date;
 
   @Expose()
   lastLogin?: Date;
