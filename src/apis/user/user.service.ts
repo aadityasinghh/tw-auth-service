@@ -19,8 +19,8 @@ export class UserService {
   ) {}
 
   async findAll(): Promise<User[]> {
-    const data= await this.userRepository.find();
-    return data
+    const data = await this.userRepository.find();
+    return data;
   }
 
   async findById(id: string): Promise<User> {
@@ -106,7 +106,10 @@ export class UserService {
     }
 
     // Check if phone exists
-    if (updateUserDto.phone_number && updateUserDto.phone_number !== user?.phone_number) {
+    if (
+      updateUserDto.phone_number &&
+      updateUserDto.phone_number !== user?.phone_number
+    ) {
       const phoneExists = await this.userRepository.findOne({
         where: { phone_number: updateUserDto.phone_number },
       });
