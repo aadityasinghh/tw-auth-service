@@ -11,7 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponse } from '../../core/common/dto/api-response.dto';
 import { User, UserStatus } from './entities/user.entity';
@@ -19,20 +18,45 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToClass } from 'class-transformer';
-
+import { RegisterUserDto } from './dto/email-verification.dto';
+import { VerifyEmailDto } from './dto/email-verification.dto';
+import { ResendOtpDto } from './dto/email-verification.dto';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  async create(
-    @Body() createUserDto: CreateUserDto,
+  @Post('register')
+  @HttpCode(HttpStatus.OK)
+  async register(
+    @Body() registerUserDto: RegisterUserDto,
+  ): Promise<ApiResponse<null>> {
+    await this.userService.register(registerUserDto);
+    return ApiResponse.success(
+      null,
+      'Registration initiated. Please check your email for the verification OTP.',
+    );
+  }
+
+  @Post('verify-email')
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
   ): Promise<ApiResponse<UserResponseDto>> {
-    const user = await this.userService.create(createUserDto);
+    const user = await this.userService.verifyEmail(verifyEmailDto);
     return ApiResponse.success(
       plainToClass(UserResponseDto, user),
-      'User created successfully',
-      HttpStatus.CREATED,
+      'Email verified successfully. Your account is now active.',
+    );
+  }
+
+  @Post('resend-otp')
+  @HttpCode(HttpStatus.OK)
+  async resendOtp(
+    @Body() resendOtpDto: ResendOtpDto,
+  ): Promise<ApiResponse<null>> {
+    await this.userService.resendOtp(resendOtpDto);
+    return ApiResponse.success(
+      null,
+      'Verification OTP sent. Please check your email.',
     );
   }
 
