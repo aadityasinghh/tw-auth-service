@@ -42,7 +42,7 @@ export class User {
   @Column({ nullable: true })
   profile_picture_url: string;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ unique: true, nullable: true })
   phone_number: string;
 
   @Column({ unique: true, nullable: true })

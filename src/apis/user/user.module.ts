@@ -7,10 +7,11 @@ import { User } from './entities/user.entity';
 import { VerificationToken } from './entities/verificiation-token.entity';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { NotificationService } from '../notification/notification.service';
 
 @Module({
   imports: [DatabaseModule, TypeOrmModule.forFeature([User, VerificationToken]),HttpModule, ConfigModule],
-  providers: [UserService],
+  providers: [UserService, NotificationService],
   controllers: [UserController],
   exports: [UserService],
 })

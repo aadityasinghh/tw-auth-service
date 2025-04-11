@@ -15,12 +15,12 @@ export class RegisterUserDto {
   @IsNotEmpty()
   email: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^[0-9]{10}$/, {
-    message: 'Phone number must be exactly 10 digits',
-  })
-  phone_number: string;
+//   @IsString()
+//   @IsNotEmpty()
+//   @Matches(/^[0-9]{10}$/, {
+//     message: 'Phone number must be exactly 10 digits',
+//   })
+//   phone_number: string;
 
   @IsString()
   @IsNotEmpty()

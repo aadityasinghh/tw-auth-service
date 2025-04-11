@@ -6,15 +6,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Connection } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { VerificationToken } from './entities/verificiation-token.entity';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
+import { NotificationService } from '../notification/notification.service';
 import { RegisterUserDto } from './dto/email-verification.dto';
 import { VerifyEmailDto } from './dto/email-verification.dto';
 import { ResendOtpDto } from './dto/email-verification.dto';
@@ -26,8 +24,8 @@ export class UserService {
     private userRepository: Repository<User>,
     @InjectRepository(VerificationToken)
     private tokenRepository: Repository<VerificationToken>,
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
+    private readonly notificationService: NotificationService,
+    private connection: Connection,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -63,43 +61,51 @@ export class UserService {
 
   // First step: Register and send OTP
   async register(registerUserDto: RegisterUserDto): Promise<void> {
-    // Check if email exists
-    const emailExists = await this.userRepository.findOne({
-      where: { email: registerUserDto.email },
-    });
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
 
-    if (emailExists && emailExists.email_verified) {
-      throw new ConflictException('Email already exists');
-    } else if (emailExists && !emailExists.email_verified) {
-      // If user exists but email not verified, resend verification
-      await this.sendVerificationOtp(registerUserDto.email);
-      return;
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      // Check if email exists
+      const emailExists = await queryRunner.manager.findOne(User, {
+        where: { email: registerUserDto.email },
+      });
+
+      if (emailExists && emailExists.email_verified) {
+        throw new ConflictException('Email already exists');
+      } else if (emailExists && !emailExists.email_verified) {
+        // If user exists but email not verified, resend verification
+        await queryRunner.commitTransaction();
+        await this.sendVerificationOtp(registerUserDto.email);
+        return;
+      }
+
+      //  if(emailExists && emailExists.email_verified && emailExists.phone_number===registerUserDto.phone_number ){
+      // throw new ConflictException('Phone Number already exists')
+      //  }
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(registerUserDto.password, salt);
+
+      // Create new user with pending status
+      const newUser = this.userRepository.create({
+        ...registerUserDto,
+        password: hashedPassword,
+        status: UserStatus.PENDING,
+        email_verified: false,
+      });
+
+      const savedUser = await queryRunner.manager.save(newUser);
+
+      // Send verification OTP
+      await queryRunner.commitTransaction();
+      await this.sendVerificationOtp(savedUser.email);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    // Check if phone exists
-    // const phoneExists = await this.userRepository.findOne({
-    //   where: { phone_number: registerUserDto.phone_number },
-    // });
-    // if (phoneExists) {
-    //   throw new ConflictException('Phone number already exists');
-    // }
-
-    // Hash password
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(registerUserDto.password, salt);
-
-    // Create new user with pending status
-    const newUser = this.userRepository.create({
-      ...registerUserDto,
-      password: hashedPassword,
-      status: UserStatus.PENDING,
-      email_verified: false,
-    });
-
-    const savedUser = await this.userRepository.save(newUser);
-
-    // Send verification OTP
-    await this.sendVerificationOtp(savedUser.email);
   }
 
   // Generate and send OTP
@@ -110,103 +116,126 @@ export class UserService {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Set expiration time (15 minutes from now)
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-
-    // Create or update verification token
-    const existingToken = await this.tokenRepository.findOne({
-      where: {
-        user_id: user.user_id,
-        type: 'email',
-        is_used: false,
-      },
-    });
-
-    if (existingToken) {
-      // Update existing token
-      existingToken.token = otp;
-      existingToken.expires_at = expiresAt;
-      await this.tokenRepository.save(existingToken);
-    } else {
-      // Create new token
-      const verificationToken = this.tokenRepository.create({
-        user_id: user.user_id,
-        token: otp,
-        type: 'email',
-        expires_at: expiresAt,
-        is_used: false,
-      });
-      await this.tokenRepository.save(verificationToken);
-    }
-
-    // Send OTP via notification service
     try {
-      const notificationServiceUrl = this.configService.get<string>(
-        'NOTIFICATION_SERVICE_URL',
-        'http://localhost:3000/notifications/send',
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Set expiration time (15 minutes from now)
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+      // Create or update verification token
+      const existingToken = await queryRunner.manager.findOne(
+        VerificationToken,
+        {
+          where: {
+            user_id: user.user_id,
+            type: 'email',
+            is_used: false,
+          },
+        },
       );
 
-      await firstValueFrom(
-        this.httpService.post(notificationServiceUrl, {
+      if (existingToken) {
+        // Update existing token
+        existingToken.token = otp;
+        existingToken.expires_at = expiresAt;
+        await queryRunner.manager.save(existingToken);
+      } else {
+        // Create new token
+        const verificationToken = this.tokenRepository.create({
+          user_id: user.user_id,
+          token: otp,
           type: 'email',
-          template: 'otp-verification',
-          recipient: user.email,
-          content: {
-            name: user.name || 'User',
-            otpCode: otp,
-          },
-        }),
-      );
+          expires_at: expiresAt,
+          is_used: false,
+        });
+        await queryRunner.manager.save(verificationToken);
+      }
+
+      // Send OTP via notification service
+      await this.notificationService.sendOtpEmail(user.email, user.name, otp);
+
+      await queryRunner.commitTransaction();
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       console.error('Failed to send verification email:', error);
       throw new BadRequestException('Failed to send verification email');
+    } finally {
+      await queryRunner.release();
     }
   }
 
   // Second step: Verify OTP and activate account
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<User> {
     const { email, otp } = verifyEmailDto;
-    const user = await this.findByEmail(email);
 
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await this.findByEmail(email);
+
+      if (!user) {
+        throw new NotFoundException(`User with email ${email} not found`);
+      }
+
+      if (user.email_verified) {
+        throw new BadRequestException('Email is already verified');
+      }
+
+      // Find the verification token
+      const verificationToken = await queryRunner.manager.findOne(
+        VerificationToken,
+        {
+          where: {
+            user_id: user.user_id,
+            token: otp,
+            type: 'email',
+            is_used: false,
+          },
+        },
+      );
+
+      if (!verificationToken) {
+        throw new UnauthorizedException('Invalid OTP');
+      }
+
+      // Check if token is expired
+      if (new Date() > verificationToken.expires_at) {
+        throw new UnauthorizedException('OTP has expired');
+      }
+
+      // Mark token as used
+      verificationToken.is_used = true;
+      await queryRunner.manager.save(verificationToken);
+
+      // Activate the user account
+      user.email_verified = true;
+      user.status = UserStatus.ACTIVE;
+      const updatedUser = await queryRunner.manager.save(user);
+
+      // Send verification success email
+      await this.notificationService.sendEmailVerificationSuccess(
+        user.email,
+        user.name,
+      );
+
+      await queryRunner.commitTransaction();
+      return updatedUser;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    if (user.email_verified) {
-      throw new BadRequestException('Email is already verified');
-    }
-
-    // Find the verification token
-    const verificationToken = await this.tokenRepository.findOne({
-      where: {
-        user_id: user.user_id,
-        token: otp,
-        type: 'email',
-        is_used: false,
-      },
-    });
-
-    if (!verificationToken) {
-      throw new UnauthorizedException('Invalid OTP');
-    }
-
-    // Check if token is expired
-    if (new Date() > verificationToken.expires_at) {
-      throw new UnauthorizedException('OTP has expired');
-    }
-
-    // Mark token as used
-    verificationToken.is_used = true;
-    await this.tokenRepository.save(verificationToken);
-
-    // Activate the user account
-    user.email_verified = true;
-    user.status = UserStatus.ACTIVE;
-    return this.userRepository.save(user);
   }
 
   // Resend OTP if needed
@@ -216,116 +245,158 @@ export class UserService {
 
   // Original methods with adjustments for the new flow
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findById(id);
-
-    // Check if user is verified before allowing updates
-    if (user.status === UserStatus.PENDING) {
-      throw new BadRequestException(
-        'Account not verified. Please verify your email first.',
-      );
-    }
-
-    // Check if email exists and is different
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const emailExists = await this.userRepository.findOne({
-        where: { email: updateUserDto.email },
-      });
-      if (emailExists) {
-        throw new ConflictException('Email already exists');
-      }
-
-      // Reset email verification if email is changed
-      user.email_verified = false;
-      user.status = UserStatus.PENDING;
-
-      // Save user first with the new email
-      const updatedUser = await this.userRepository.save({
-        ...user,
-        email: updateUserDto.email,
-      });
-
-      // Send verification email to the new email address
-      await this.sendVerificationOtp(updateUserDto.email);
-
-      // Return user with other updates applied
+    // Remove email from updateUserDto to prevent email changes
+    if (updateUserDto.email) {
       delete updateUserDto.email;
-      if (Object.keys(updateUserDto).length === 0) {
-        return updatedUser;
+    }
+
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await this.findById(id);
+
+      // Check if user is verified before allowing updates
+      if (user.status === UserStatus.PENDING) {
+        throw new BadRequestException(
+          'Account not verified. Please verify your email first.',
+        );
       }
-    }
 
-    // Check if phone exists
-    if (
-      updateUserDto.phone_number &&
-      updateUserDto.phone_number !== user?.phone_number
-    ) {
-      const phoneExists = await this.userRepository.findOne({
-        where: { phone_number: updateUserDto.phone_number },
-      });
-      if (phoneExists) {
-        throw new ConflictException('Phone number already exists');
+      // Check if phone exists
+      if (
+        updateUserDto.phone_number &&
+        updateUserDto.phone_number !== user?.phone_number
+      ) {
+        const phoneExists = await queryRunner.manager.findOne(User, {
+          where: { phone_number: updateUserDto.phone_number },
+        });
+        if (phoneExists) {
+          throw new ConflictException('Phone number already exists');
+        }
       }
-    }
 
-    // Check if Aadhaar exists
-    if (
-      updateUserDto.aadhar_number &&
-      updateUserDto.aadhar_number !== user.aadhaar_number
-    ) {
-      const aadhaarExists = await this.userRepository.findOne({
-        where: { aadhaar_number: updateUserDto.aadhar_number },
-      });
-      if (aadhaarExists) {
-        throw new ConflictException('Aadhaar number already exists');
+      // Check if Aadhaar exists
+      if (
+        updateUserDto.aadhar_number &&
+        updateUserDto.aadhar_number !== user.aadhaar_number
+      ) {
+        const aadhaarExists = await queryRunner.manager.findOne(User, {
+          where: { aadhaar_number: updateUserDto.aadhar_number },
+        });
+        if (aadhaarExists) {
+          throw new ConflictException('Aadhaar number already exists');
+        }
       }
-    }
 
-    // Hash password if provided
-    if (updateUserDto.password) {
-      const salt = await bcrypt.genSalt();
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, salt);
-    }
+      // Hash password if provided
+      if (updateUserDto.password) {
+        const salt = await bcrypt.genSalt();
+        updateUserDto.password = await bcrypt.hash(
+          updateUserDto.password,
+          salt,
+        );
+      }
 
-    // Update user
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+      // Update user
+      Object.assign(user, updateUserDto);
+      const updatedUser = await queryRunner.manager.save(user);
+
+      await queryRunner.commitTransaction();
+      await this.notificationService.sendUserDetailsUpdateEmail(
+        user.email,
+        user.name,
+      );
+      return updatedUser;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async verifyAadhaar(userId: string): Promise<User> {
-    const user = await this.findById(userId);
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Check if user is verified before allowing updates
-    if (user.status === UserStatus.PENDING) {
-      throw new BadRequestException(
-        'Account not verified. Please verify your email first.',
-      );
+    try {
+      const user = await this.findById(userId);
+
+      // Check if user is verified before allowing updates
+      if (user.status === UserStatus.PENDING) {
+        throw new BadRequestException(
+          'Account not verified. Please verify your email first.',
+        );
+      }
+
+      if (!user.aadhaar_number) {
+        throw new BadRequestException('Aadhaar number not provided');
+      }
+
+      // In a real application, you would call an external Aadhaar verification service here
+      user.aadhaar_verified = true;
+      const updatedUser = await queryRunner.manager.save(user);
+
+      await queryRunner.commitTransaction();
+      return updatedUser;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    if (!user.aadhaar_number) {
-      throw new BadRequestException('Aadhaar number not provided');
-    }
-
-    // In a real application, you would call an external Aadhaar verification service here
-    user.aadhaar_verified = true;
-    return this.userRepository.save(user);
   }
 
   async changeStatus(userId: string, status: UserStatus): Promise<User> {
-    const user = await this.findById(userId);
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Don't allow changing to ACTIVE if email isn't verified
-    if (status === UserStatus.ACTIVE && !user.email_verified) {
-      throw new BadRequestException(
-        'Cannot activate account. Email not verified.',
-      );
+    try {
+      const user = await this.findById(userId);
+
+      // Don't allow changing to ACTIVE if email isn't verified
+      if (status === UserStatus.ACTIVE && !user.email_verified) {
+        throw new BadRequestException(
+          'Cannot activate account. Email not verified.',
+        );
+      }
+
+      user.status = status;
+      const updatedUser = await queryRunner.manager.save(user);
+
+      await queryRunner.commitTransaction();
+      return updatedUser;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    user.status = status;
-    return this.userRepository.save(user);
   }
 
   async delete(id: string): Promise<void> {
-    const user = await this.findById(id);
-    await this.userRepository.remove(user);
+    // Start transaction
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await this.findById(id);
+      await queryRunner.manager.remove(user);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

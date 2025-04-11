@@ -15,12 +15,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponse } from '../../core/common/dto/api-response.dto';
 import { User, UserStatus } from './entities/user.entity';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+// import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToClass } from 'class-transformer';
 import { RegisterUserDto } from './dto/email-verification.dto';
 import { VerifyEmailDto } from './dto/email-verification.dto';
 import { ResendOtpDto } from './dto/email-verification.dto';
+import { VerifiedUserGuard } from 'src/core/auth/guards/verified-user.guard';
+
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -60,7 +63,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get()
   async findAll(): Promise<ApiResponse<UserResponseDto[]>> {
     const users = await this.userService.findAll();
@@ -70,7 +73,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get(':id')
   async findOne(
     @Param('id') id: string,
@@ -82,7 +85,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get('profile/me')
   getProfile(@CurrentUser() user: User): ApiResponse<UserResponseDto> {
     return ApiResponse.success(
@@ -91,7 +94,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -104,7 +107,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id/verify-aadhaar')
   async verifyAadhaar(
     @Param('id') id: string,
@@ -116,7 +119,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id/status')
   async changeStatus(
     @Param('id') id: string,
@@ -129,7 +132,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
