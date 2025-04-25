@@ -221,14 +221,14 @@ export class UserService {
       user.email_verified = true;
       user.status = UserStatus.ACTIVE;
       const updatedUser = await queryRunner.manager.save(user);
-
+      console.log('updateduser', updatedUser);
       // Send verification success email
+      await queryRunner.commitTransaction();
       await this.notificationService.sendEmailVerificationSuccess(
         user.email,
         user.name,
       );
 
-      await queryRunner.commitTransaction();
       return updatedUser;
     } catch (error) {
       await queryRunner.rollbackTransaction();

@@ -51,7 +51,7 @@ export class NotificationService {
   ): Promise<void> {
     await this.sendNotification({
       type: 'email',
-      template: 'USER_CREATION',
+      template: 'account-creation-success',
       recipient: email,
       content: {
         name: name || 'User',
