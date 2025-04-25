@@ -7,6 +7,10 @@ import { UserModule } from '../../apis/user/user.module';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from 'src/core/auth/strategies/jwt.strategy';
 import { LocalStrategy } from 'src/core/auth/strategies/local.strategy';
+import { NotificationService } from '../notification/notification.service';
+import { VerificationToken } from '../user/entities/verificiation-token.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -21,9 +25,17 @@ import { LocalStrategy } from 'src/core/auth/strategies/local.strategy';
         signOptions: { expiresIn: '24h' },
       }),
     }),
+    TypeOrmModule.forFeature([VerificationToken]),
+    HttpModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    NotificationService,
+    // VerificationToken,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -244,20 +244,31 @@ export class UserService {
   }
 
   // Original methods with adjustments for the new flow
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    // Remove email from updateUserDto to prevent email changes
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    user_id: string,
+  ): Promise<User> {
+    // Block email updates completely
+    if (user_id !== id) {
+      throw new UnauthorizedException(
+        'You are not authorized to update this user',
+      );
+    }
     if (updateUserDto.email) {
-      delete updateUserDto.email;
+      throw new BadRequestException(
+        'Email cannot be updated. Please contact support if you need to change your email.',
+      );
     }
 
     // Start transaction
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
+    // console.log('id', id);
     try {
       const user = await this.findById(id);
-
+      console.log('user', user);
       // Check if user is verified before allowing updates
       if (user.status === UserStatus.PENDING) {
         throw new BadRequestException(
@@ -292,18 +303,25 @@ export class UserService {
       }
 
       // Hash password if provided
-      if (updateUserDto.password) {
-        const salt = await bcrypt.genSalt();
-        updateUserDto.password = await bcrypt.hash(
-          updateUserDto.password,
-          salt,
-        );
-      }
+      // if (updateUserDto.password) {
+      //   const salt = await bcrypt.genSalt();
+      //   updateUserDto.password = await bcrypt.hash(
+      //     updateUserDto.password,
+      //     salt,
+      //   );
+      // }
 
       // Update user
-      Object.assign(user, updateUserDto);
+      // const originalUser = user;
+      Object.assign(user, {
+        email: user.email,
+        name: user.name,
+        updateUserDto,
+      });
+      // look at this because we are not suppposed to get any getail after the user has updated the details we should get null but we are getting the other details whihch we dint updat
       const updatedUser = await queryRunner.manager.save(user);
-
+      // console.log('updateduser', updatedUser);
+      // console.log(originalUser.email, originalUser.name);
       await queryRunner.commitTransaction();
       await this.notificationService.sendUserDetailsUpdateEmail(
         user.email,
