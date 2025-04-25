@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -99,8 +100,9 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
   ): Promise<ApiResponse<UserResponseDto>> {
-    const updatedUser = await this.userService.update(id, updateUserDto);
+    const updatedUser = await this.userService.update(id, updateUserDto, req.user.user_id);
     return ApiResponse.success(
       plainToClass(UserResponseDto, updatedUser),
       'User updated successfully',
@@ -137,5 +139,11 @@ export class UserController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     await this.userService.delete(id);
+  }
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteSelf(@CurrentUser() user: User): Promise<void> {
+    await this.userService.delete(user.user_id);
   }
 }

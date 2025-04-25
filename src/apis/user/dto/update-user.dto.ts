@@ -40,7 +40,7 @@ export class UpdateUserDto {
   @IsEnum(UserStatus)
   status?: UserStatus;
 
-  @IsOptional()
-  @IsString()
-  password?: string;
+  // @IsOptional()
+  // @IsString()
+  // password?: string;
 }
