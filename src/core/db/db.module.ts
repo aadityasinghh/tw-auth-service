@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/apis/user/entities/user.entity';
 import * as dotenv from 'dotenv';
+import { VerificationToken } from 'src/apis/user/entities/verificiation-token.entity';
 
 dotenv.config();
 @Global()
@@ -15,7 +16,7 @@ dotenv.config();
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       // entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      entities: [User],
+      entities: [User, VerificationToken],
       migrations: [__dirname + '/migrations/*.ts'],
       migrationsRun: true,
       synchronize: false,

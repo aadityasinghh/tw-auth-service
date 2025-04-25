@@ -24,12 +24,12 @@ export class CreateUserDto {
   })
   password: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^[6-9]\d{9}$/, {
-    message: 'Phone number should be a valid 10-digit Indian number',
-  })
-  phone_number: string;
+  // @IsString()
+  // @IsNotEmpty()
+  // @Matches(/^[6-9]\d{9}$/, {
+  //   message: 'Phone number should be a valid 10-digit Indian number',
+  // })
+  // phone_number: string;
 
   @IsString()
   @IsOptional()

@@ -22,7 +22,11 @@ export class AuthService {
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Account is inactive or blocked');
     }
-
+    if (!user.email_verified) {
+      throw new UnauthorizedException(
+        'Email not verified. Please verify your email before logging in.',
+      );
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');

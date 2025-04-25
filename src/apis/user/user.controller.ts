@@ -11,32 +11,59 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponse } from '../../core/common/dto/api-response.dto';
 import { User, UserStatus } from './entities/user.entity';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+// import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { UserResponseDto } from './dto/user-response.dto';
 import { plainToClass } from 'class-transformer';
+import { RegisterUserDto } from './dto/email-verification.dto';
+import { VerifyEmailDto } from './dto/email-verification.dto';
+import { ResendOtpDto } from './dto/email-verification.dto';
+import { VerifiedUserGuard } from 'src/core/auth/guards/verified-user.guard';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  async create(
-    @Body() createUserDto: CreateUserDto,
-  ): Promise<ApiResponse<UserResponseDto>> {
-    const user = await this.userService.create(createUserDto);
+  @Post('register')
+  @HttpCode(HttpStatus.OK)
+  async register(
+    @Body() registerUserDto: RegisterUserDto,
+  ): Promise<ApiResponse<null>> {
+    await this.userService.register(registerUserDto);
     return ApiResponse.success(
-      plainToClass(UserResponseDto, user),
-      'User created successfully',
-      HttpStatus.CREATED,
+      null,
+      'Registration initiated. Please check your email for the verification OTP.',
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Post('verify-email')
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
+  ): Promise<ApiResponse<UserResponseDto>> {
+    const user = await this.userService.verifyEmail(verifyEmailDto);
+    return ApiResponse.success(
+      plainToClass(UserResponseDto, user),
+      'Email verified successfully. Your account is now active.',
+    );
+  }
+
+  @Post('resend-otp')
+  @HttpCode(HttpStatus.OK)
+  async resendOtp(
+    @Body() resendOtpDto: ResendOtpDto,
+  ): Promise<ApiResponse<null>> {
+    await this.userService.resendOtp(resendOtpDto);
+    return ApiResponse.success(
+      null,
+      'Verification OTP sent. Please check your email.',
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get()
   async findAll(): Promise<ApiResponse<UserResponseDto[]>> {
     const users = await this.userService.findAll();
@@ -46,7 +73,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get(':id')
   async findOne(
     @Param('id') id: string,
@@ -58,7 +85,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get('profile/me')
   getProfile(@CurrentUser() user: User): ApiResponse<UserResponseDto> {
     return ApiResponse.success(
@@ -67,7 +94,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -80,7 +107,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id/verify-aadhaar')
   async verifyAadhaar(
     @Param('id') id: string,
@@ -92,7 +119,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id/status')
   async changeStatus(
     @Param('id') id: string,
@@ -105,7 +132,7 @@ export class UserController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
