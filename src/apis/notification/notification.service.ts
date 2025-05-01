@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { ResponseService } from '../../core/common/services/response.service';
+import {
+  ResponseCodes,
+  ResponseMessages,
+} from '../../core/common/constants/response-messages.constant';
 
 export interface NotificationContent {
   type: string;
@@ -15,6 +20,7 @@ export class NotificationService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly responseService: ResponseService,
   ) {}
 
   async sendNotification(notificationData: NotificationContent): Promise<void> {
@@ -29,7 +35,10 @@ export class NotificationService {
       );
     } catch (error) {
       console.error('Failed to send notification:', error);
-      throw new Error(`Failed to send ${notificationData.type} notification`);
+      return this.responseService.badRequest(
+        `Failed to send ${notificationData.type} notification`,
+        ResponseCodes.FAILED,
+      );
     }
   }
 

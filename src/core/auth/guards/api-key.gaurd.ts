@@ -1,14 +1,20 @@
 // src/core/auth/guards/api-key.guard.ts
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
+import { ResponseService } from '../../common/services/response.service';
+import {
+  ResponseCodes,
+  ResponseMessages,
+} from '../../common/constants/response-messages.constant';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private configService: ConfigService,
+    private responseService: ResponseService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -23,15 +29,21 @@ export class ApiKeyGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
     const apiKey = request.headers['x-api-key'] as string;
-    
+
     if (!apiKey) {
-      throw new UnauthorizedException('API key is missing');
+      return this.responseService.unauthorized(
+        ResponseMessages.API_KEY_MISSING,
+        ResponseCodes.API_KEY_MISSING,
+      );
     }
 
     const validApiKey = this.configService.get<string>('API_KEY');
-    
+
     if (apiKey !== validApiKey) {
-      throw new UnauthorizedException('Invalid API key');
+      return this.responseService.unauthorized(
+        ResponseMessages.API_KEY_INVALID,
+        ResponseCodes.API_KEY_INVALID,
+      );
     }
 
     return true;

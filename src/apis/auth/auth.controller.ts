@@ -10,6 +10,7 @@ import {
   Req,
   BadRequestException,
   Patch,
+  Param,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -17,17 +18,18 @@ import { LoginUserDto } from '../../apis/user/dto/login-user.dto';
 import { User } from '../../apis/user/entities/user.entity';
 import { UserResponseDto } from '../../apis/user/dto/user-response.dto';
 import { plainToClass } from 'class-transformer';
-import { LocalAuthGuard } from 'src/core/auth/guards/local-auth.guard';
-import { CurrentUser } from 'src/core/auth/decorators/current-user.decorator';
-import { ApiResponse } from 'src/core/common/dto/api-response.dto';
+import { LocalAuthGuard } from '../../core/auth/guards/local-auth.guard';
+import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from 'src/core/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { ForgotPasswordDto } from '../user/dto/forgot-password.dto';
 import { ResetPasswordDto } from '../user/dto/reset-password.dto';
-import { VerifiedUserGuard } from 'src/core/auth/guards/verified-user.guard';
-import { ApiKey } from 'src/core/auth/decorators/api-key-decorator';
-import { ApiKeyGuard } from 'src/core/auth/guards/api-key.gaurd';
+import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
+import { ApiKey } from '../../core/auth/decorators/api-key-decorator';
+import { ApiKeyGuard } from '../../core/auth/guards/api-key.gaurd';
+import { ResponseService } from '../../core/common/services/response.service';
+import { ResponseMessages } from '../../core/common/constants/response-messages.constant';
 // import { ThrottlerGuard } from '@nestjs/';
 
 @Controller('auth')
@@ -35,6 +37,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly responseService: ResponseService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
@@ -44,7 +47,7 @@ export class AuthController {
     @Body() loginUserDto: LoginUserDto,
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
-  ): ApiResponse<{ access_token: string; user: UserResponseDto }> {
+  ) {
     const authResult = this.authService.login(user);
 
     // Set the JWT token as an HTTP-only cookie
@@ -58,19 +61,19 @@ export class AuthController {
 
     response.cookie('access_token', authResult.access_token, cookieOptions);
 
-    return ApiResponse.success(
+    return this.responseService.success(
       {
         access_token: authResult.access_token,
         user: plainToClass(UserResponseDto, user),
       },
-      'Login successful',
+      ResponseMessages.AUTH_SUCCESS,
     );
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('validate')
   @HttpCode(HttpStatus.OK)
-  validateToken(@Req() request: Request): ApiResponse<UserResponseDto> {
+  validateToken(@Req() request: Request) {
     // The user will be attached to the request by the JwtAuthGuard
     const user = request.user as User;
 
@@ -83,7 +86,7 @@ export class AuthController {
       userId: user.user_id, // Ensure the tour service gets the user ID in the format it expects
     };
 
-    return ApiResponse.success(
+    return this.responseService.success(
       responseWithUserId,
       'Token validated successfully',
     );
@@ -91,20 +94,18 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) response: Response): ApiResponse<null> {
+  logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('access_token', { path: '/' });
 
-    return ApiResponse.success(null, 'Logout successful');
+    return this.responseService.success(null, 'Logout successful');
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   // @UseGuards(ThrottlerGuard)
-  async forgotPassword(
-    @Body() forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<ApiResponse<null>> {
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     await this.authService.initiatePasswordReset(forgotPasswordDto.email);
-    return ApiResponse.success(
+    return this.responseService.success(
       null,
       'If your email is registered with us, you will receive a password reset OTP.',
     );
@@ -112,11 +113,9 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(
-    @Body() resetPasswordDto: ResetPasswordDto,
-  ): Promise<ApiResponse<null>> {
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     await this.authService.resetPassword(resetPasswordDto);
-    return ApiResponse.success(
+    return this.responseService.success(
       null,
       'Password has been reset successfully. You can now login with your new password.',
     );
@@ -128,20 +127,21 @@ export class AuthController {
   async changePassword(
     @CurrentUser() user: User,
     @Body() changePasswordDto: ChangePasswordDto,
-  ): Promise<ApiResponse<null>> {
+  ) {
     await this.authService.changePassword(user.user_id, changePasswordDto);
-    return ApiResponse.success(null, 'Password changed successfully.');
+    return this.responseService.success(null, 'Password changed successfully.');
   }
 
   // @UseGuards(ApiKeyGuard, ThrottlerGuard)
+  @UseGuards(ApiKeyGuard)
   @Get('user-email/:id')
   @HttpCode(HttpStatus.OK)
   @ApiKey() // Custom decorator to enforce API key
-  async getUserEmail(
-    @Req() request: Request,
-  ): Promise<ApiResponse<{ email: string }>> {
-    const userId = request.params.id;
+  async getUserEmail(@Param('id') userId: string) {
     const email = await this.authService.getUserEmail(userId);
-    return ApiResponse.success({ email }, 'User email retrieved successfully');
+    return this.responseService.success(
+      email,
+      'User email retrieved successfully',
+    );
   }
 }
