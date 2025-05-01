@@ -133,7 +133,7 @@ export class AuthController {
   }
 
   // @UseGuards(ApiKeyGuard, ThrottlerGuard)
-  @UseGuards(ApiKeyGuard)
+  // @UseGuards(ApiKeyGuard)
   @Get('user-email/:id')
   @HttpCode(HttpStatus.OK)
   @ApiKey() // Custom decorator to enforce API key

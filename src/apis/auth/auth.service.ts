@@ -164,7 +164,6 @@ export class AuthService {
       const user = await this.userService.findByEmail(email, true);
 
       if (!user) {
-        await queryRunner.rollbackTransaction();
         return this.responseService.notFound('User');
       }
 
@@ -182,7 +181,6 @@ export class AuthService {
       );
 
       if (!verificationToken) {
-        await queryRunner.rollbackTransaction();
         return this.responseService.unauthorized(
           ResponseMessages.OTP_INVALID,
           ResponseCodes.OTP_INVALID,
