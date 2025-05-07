@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Connection } from 'typeorm';
+import { Repository, Connection, DataSource } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -30,7 +30,7 @@ export class UserService {
     @InjectRepository(VerificationToken)
     private tokenRepository: Repository<VerificationToken>,
     private readonly notificationService: NotificationService,
-    private connection: Connection,
+    private connection: DataSource,
     private readonly responseService: ResponseService,
   ) {}
 
