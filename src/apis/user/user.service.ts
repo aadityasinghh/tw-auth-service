@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Connection } from 'typeorm';
+import { Repository, Connection, DataSource } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -16,6 +16,11 @@ import { NotificationService } from '../notification/notification.service';
 import { RegisterUserDto } from './dto/email-verification.dto';
 import { VerifyEmailDto } from './dto/email-verification.dto';
 import { ResendOtpDto } from './dto/email-verification.dto';
+import { ResponseService } from '../../core/common/services/response.service';
+import {
+  ResponseMessages,
+  ResponseCodes,
+} from '../../core/common/constants/response-messages.constant';
 
 @Injectable()
 export class UserService {
@@ -25,7 +30,8 @@ export class UserService {
     @InjectRepository(VerificationToken)
     private tokenRepository: Repository<VerificationToken>,
     private readonly notificationService: NotificationService,
-    private connection: Connection,
+    private connection: DataSource,
+    private readonly responseService: ResponseService,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -38,7 +44,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      return this.responseService.notFound('User', `with ID ${id}`);
     }
 
     return user;
@@ -59,6 +65,19 @@ export class UserService {
     return queryBuilder.getOne();
   }
 
+  async getUserEmail(id: string): Promise<{ email: string }> {
+    const user = await this.userRepository.findOne({
+      where: { user_id: id },
+      select: ['email'],
+    });
+
+    if (!user) {
+      return this.responseService.notFound('User', `with ID ${id}`);
+    }
+
+    return { email: user.email };
+  }
+
   // First step: Register and send OTP
   async register(registerUserDto: RegisterUserDto): Promise<void> {
     // Start transaction
@@ -73,7 +92,11 @@ export class UserService {
       });
 
       if (emailExists && emailExists.email_verified) {
-        throw new ConflictException('Email already exists');
+        return this.responseService.conflict(
+          ResponseMessages.EMAIL_EXISTS,
+          ResponseCodes.EMAIL_EXISTS,
+        );
+        // await queryRunner.rollbackTransaction();
       } else if (emailExists && !emailExists.email_verified) {
         // If user exists but email not verified, resend verification
         await queryRunner.commitTransaction();
@@ -81,9 +104,6 @@ export class UserService {
         return;
       }
 
-      //  if(emailExists && emailExists.email_verified && emailExists.phone_number===registerUserDto.phone_number ){
-      // throw new ConflictException('Phone Number already exists')
-      //  }
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(registerUserDto.password, salt);
 
@@ -113,7 +133,7 @@ export class UserService {
     const user = await this.findByEmail(email);
 
     if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      return this.responseService.notFound('User', `with email ${email}`);
     }
 
     // Start transaction
@@ -165,7 +185,10 @@ export class UserService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('Failed to send verification email:', error);
-      throw new BadRequestException('Failed to send verification email');
+      return this.responseService.badRequest(
+        ResponseMessages.EMAIL_VERIFICATION_FAILED,
+        ResponseCodes.EMAIL_VERIFICATION_FAILED,
+      );
     } finally {
       await queryRunner.release();
     }
@@ -184,11 +207,16 @@ export class UserService {
       const user = await this.findByEmail(email);
 
       if (!user) {
-        throw new NotFoundException(`User with email ${email} not found`);
+        await queryRunner.rollbackTransaction();
+        return this.responseService.notFound('User', `with email ${email}`);
       }
 
       if (user.email_verified) {
-        throw new BadRequestException('Email is already verified');
+        await queryRunner.rollbackTransaction();
+        return this.responseService.badRequest(
+          ResponseMessages.EMAIL_ALREADY_VERIFIED,
+          ResponseCodes.EMAIL_ALREADY_VERIFIED,
+        );
       }
 
       // Find the verification token
@@ -205,12 +233,20 @@ export class UserService {
       );
 
       if (!verificationToken) {
-        throw new UnauthorizedException('Invalid OTP');
+        await queryRunner.rollbackTransaction();
+        return this.responseService.unauthorized(
+          ResponseMessages.OTP_INVALID,
+          ResponseCodes.OTP_INVALID,
+        );
       }
 
       // Check if token is expired
       if (new Date() > verificationToken.expires_at) {
-        throw new UnauthorizedException('OTP has expired');
+        await queryRunner.rollbackTransaction();
+        return this.responseService.unauthorized(
+          ResponseMessages.OTP_EXPIRED,
+          ResponseCodes.OTP_EXPIRED,
+        );
       }
 
       // Mark token as used

@@ -1,16 +1,22 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../../apis/user/user.service';
 import { Request } from 'express';
-import { UserStatus } from 'src/apis/user/entities/user.entity';
+import { UserStatus } from '../../../apis/user/entities/user.entity';
+import { ResponseService } from '../../common/services/response.service';
+import {
+  ResponseCodes,
+  ResponseMessages,
+} from '../../common/constants/response-messages.constant';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
+    private readonly responseService: ResponseService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -34,11 +40,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.userService.findById(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      return this.responseService.unauthorized(
+        ResponseMessages.USER_NOT_FOUND,
+        ResponseCodes.USER_NOT_FOUND,
+      );
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException('Account is inactive or blocked');
+      return this.responseService.unauthorized(
+        ResponseMessages.ACCOUNT_INACTIVE,
+        ResponseCodes.ACCOUNT_INACTIVE,
+      );
     }
 
     return user;

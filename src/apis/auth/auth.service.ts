@@ -16,6 +16,11 @@ import { NotificationService } from '../../apis/notification/notification.servic
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { VerificationToken } from '../../apis/user/entities/verificiation-token.entity';
+import { ResponseService } from '../../core/common/services/response.service';
+import {
+  ResponseCodes,
+  ResponseMessages,
+} from '../../core/common/constants/response-messages.constant';
 
 @Injectable()
 export class AuthService {
@@ -26,26 +31,39 @@ export class AuthService {
     @InjectRepository(VerificationToken)
     private tokenRepository: Repository<VerificationToken>,
     private connection: DataSource,
+    private readonly responseService: ResponseService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.findByEmail(email, true);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      return this.responseService.unauthorized(
+        ResponseMessages.INVALID_CREDENTIALS,
+        ResponseCodes.INVALID_CREDENTIALS,
+      );
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException('Account is inactive or blocked');
-    }
-    if (!user.email_verified) {
-      throw new UnauthorizedException(
-        'Email not verified. Please verify your email before logging in.',
+      return this.responseService.unauthorized(
+        ResponseMessages.ACCOUNT_INACTIVE,
+        ResponseCodes.ACCOUNT_INACTIVE,
       );
     }
+
+    if (!user.email_verified) {
+      return this.responseService.unauthorized(
+        'Email not verified. Please verify your email before logging in.',
+        ResponseCodes.UNAUTHORIZED,
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      return this.responseService.unauthorized(
+        ResponseMessages.INVALID_CREDENTIALS,
+        ResponseCodes.INVALID_CREDENTIALS,
+      );
     }
 
     const { password: _, ...result } = user;
@@ -113,21 +131,15 @@ export class AuthService {
       }
 
       // Send password reset OTP via notification service
-      // await this.notificationService.sendNotification({
-      //   type: 'email',
-      //   template: 'password-reset',
-      //   recipient: user.email,
-      //   content: {
-      //     name: user.name || 'User',
-      //     otpCode: otp,
-      //   },
-      // });
       await this.notificationService.sendOtpEmail(user.email, user.name, otp);
 
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new BadRequestException('Failed to process password reset request');
+      return this.responseService.badRequest(
+        ResponseMessages.PASSWORD_RESET_FAILED,
+        ResponseCodes.PASSWORD_RESET_FAILED,
+      );
     } finally {
       await queryRunner.release();
     }
@@ -137,7 +149,10 @@ export class AuthService {
     const { email, otp, newPassword, confirmNewPassword } = resetPasswordDto;
 
     if (newPassword !== confirmNewPassword) {
-      throw new BadRequestException('Passwords do not match');
+      return this.responseService.badRequest(
+        ResponseMessages.PASSWORD_MISMATCH,
+        ResponseCodes.PASSWORD_MISMATCH,
+      );
     }
 
     // Start transaction
@@ -149,7 +164,7 @@ export class AuthService {
       const user = await this.userService.findByEmail(email, true);
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        return this.responseService.notFound('User');
       }
 
       // Find the verification token
@@ -166,12 +181,19 @@ export class AuthService {
       );
 
       if (!verificationToken) {
-        throw new UnauthorizedException('Invalid OTP');
+        return this.responseService.unauthorized(
+          ResponseMessages.OTP_INVALID,
+          ResponseCodes.OTP_INVALID,
+        );
       }
 
       // Check if token is expired
       if (new Date() > verificationToken.expires_at) {
-        throw new UnauthorizedException('OTP has expired');
+        await queryRunner.rollbackTransaction();
+        return this.responseService.unauthorized(
+          ResponseMessages.OTP_EXPIRED,
+          ResponseCodes.OTP_EXPIRED,
+        );
       }
 
       // Mark token as used
@@ -186,14 +208,6 @@ export class AuthService {
       await queryRunner.manager.save(user);
 
       // Send password reset success notification
-      // await this.notificationService.sendNotification({
-      //   type: 'email',
-      //   template: 'password-reset-success',
-      //   recipient: user.email,
-      //   content: {
-      //     name: user.name || 'User',
-      //   },
-      // });
       await this.notificationService.sendEmailVerificationSuccess(
         user.email,
         user.name,
@@ -214,9 +228,12 @@ export class AuthService {
   ): Promise<void> {
     const { currentPassword, newPassword, confirmNewPassword } =
       changePasswordDto;
-    console.log(userId, changePasswordDto);
+
     if (newPassword !== confirmNewPassword) {
-      throw new BadRequestException('New passwords do not match');
+      return this.responseService.badRequest(
+        ResponseMessages.PASSWORD_MISMATCH,
+        ResponseCodes.PASSWORD_MISMATCH,
+      );
     }
 
     // Get the user with password field (need to explicitly select it)
@@ -229,7 +246,7 @@ export class AuthService {
 
     // Check if user exists
     if (!userWithPassword) {
-      throw new NotFoundException('User not found');
+      return this.responseService.notFound('User');
     }
 
     // Verify current password
@@ -238,7 +255,10 @@ export class AuthService {
       userWithPassword.password,
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      return this.responseService.unauthorized(
+        ResponseMessages.CURRENT_PASSWORD_INCORRECT,
+        ResponseCodes.CURRENT_PASSWORD_INCORRECT,
+      );
     }
 
     // Start transaction
@@ -267,11 +287,7 @@ export class AuthService {
     }
   }
 
-  async getUserEmail(userId: string): Promise<string> {
-    const user = await this.userService.findById(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user.email;
+  async getUserEmail(userId: string): Promise<{ email: string }> {
+    return this.userService.getUserEmail(userId);
   }
 }

@@ -11,6 +11,7 @@ import { NotificationService } from '../notification/notification.service';
 import { VerificationToken } from '../user/entities/verificiation-token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
+import { ResponseService } from 'src/core/common/services/response.service';
 
 @Module({
   imports: [
@@ -34,6 +35,8 @@ import { HttpModule } from '@nestjs/axios';
     LocalStrategy,
     JwtStrategy,
     NotificationService,
+    ResponseService
+
     // VerificationToken,
   ],
   exports: [AuthService],

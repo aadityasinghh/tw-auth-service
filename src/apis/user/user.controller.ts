@@ -10,10 +10,10 @@ import {
   Post,
   Request,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiResponse } from '../../core/common/dto/api-response.dto';
 import { User, UserStatus } from './entities/user.entity';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 // import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
@@ -23,30 +23,31 @@ import { plainToClass } from 'class-transformer';
 import { RegisterUserDto } from './dto/email-verification.dto';
 import { VerifyEmailDto } from './dto/email-verification.dto';
 import { ResendOtpDto } from './dto/email-verification.dto';
-import { VerifiedUserGuard } from 'src/core/auth/guards/verified-user.guard';
+import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
+import { ResponseService } from '../../core/common/services/response.service';
+import { ResponseMessages } from '../../core/common/constants/response-messages.constant';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly responseService: ResponseService,
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.OK)
-  async register(
-    @Body() registerUserDto: RegisterUserDto,
-  ): Promise<ApiResponse<null>> {
+  async register(@Body() registerUserDto: RegisterUserDto) {
     await this.userService.register(registerUserDto);
-    return ApiResponse.success(
+    return this.responseService.success(
       null,
       'Registration initiated. Please check your email for the verification OTP.',
     );
   }
 
   @Post('verify-email')
-  async verifyEmail(
-    @Body() verifyEmailDto: VerifyEmailDto,
-  ): Promise<ApiResponse<UserResponseDto>> {
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     const user = await this.userService.verifyEmail(verifyEmailDto);
-    return ApiResponse.success(
+    return this.responseService.success(
       plainToClass(UserResponseDto, user),
       'Email verified successfully. Your account is now active.',
     );
@@ -54,11 +55,9 @@ export class UserController {
 
   @Post('resend-otp')
   @HttpCode(HttpStatus.OK)
-  async resendOtp(
-    @Body() resendOtpDto: ResendOtpDto,
-  ): Promise<ApiResponse<null>> {
+  async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
     await this.userService.resendOtp(resendOtpDto);
-    return ApiResponse.success(
+    return this.responseService.success(
       null,
       'Verification OTP sent. Please check your email.',
     );
@@ -66,9 +65,9 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get()
-  async findAll(): Promise<ApiResponse<UserResponseDto[]>> {
+  async findAll() {
     const users = await this.userService.findAll();
-    return ApiResponse.success(
+    return this.responseService.success(
       users.map((user) => plainToClass(UserResponseDto, user)),
       'Users retrieved successfully',
     );
@@ -76,11 +75,9 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<ApiResponse<UserResponseDto>> {
+  async findOne(@Param('id') id: string) {
     const user = await this.userService.findById(id);
-    return ApiResponse.success(
+    return this.responseService.success(
       plainToClass(UserResponseDto, user),
       'User retrieved successfully',
     );
@@ -88,8 +85,8 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Get('profile/me')
-  getProfile(@CurrentUser() user: User): ApiResponse<UserResponseDto> {
-    return ApiResponse.success(
+  getProfile(@CurrentUser() user: User) {
+    return this.responseService.success(
       plainToClass(UserResponseDto, user),
       'Profile retrieved successfully',
     );
@@ -100,22 +97,24 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Request() req,
-  ): Promise<ApiResponse<UserResponseDto>> {
-    const updatedUser = await this.userService.update(id, updateUserDto, req.user.user_id);
-    return ApiResponse.success(
+    @Req() req,
+  ) {
+    const updatedUser = await this.userService.update(
+      id,
+      updateUserDto,
+      req.user.user_id,
+    );
+    return this.responseService.success(
       plainToClass(UserResponseDto, updatedUser),
-      'User updated successfully',
+      ResponseMessages.USER_UPDATED,
     );
   }
 
   @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Patch(':id/verify-aadhaar')
-  async verifyAadhaar(
-    @Param('id') id: string,
-  ): Promise<ApiResponse<UserResponseDto>> {
+  async verifyAadhaar(@Param('id') id: string) {
     const updatedUser = await this.userService.verifyAadhaar(id);
-    return ApiResponse.success(
+    return this.responseService.success(
       plainToClass(UserResponseDto, updatedUser),
       'Aadhaar verified successfully',
     );
@@ -126,9 +125,9 @@ export class UserController {
   async changeStatus(
     @Param('id') id: string,
     @Body('status') status: UserStatus,
-  ): Promise<ApiResponse<UserResponseDto>> {
+  ) {
     const updatedUser = await this.userService.changeStatus(id, status);
-    return ApiResponse.success(
+    return this.responseService.success(
       plainToClass(UserResponseDto, updatedUser),
       'User status updated successfully',
     );
@@ -140,10 +139,18 @@ export class UserController {
   async remove(@Param('id') id: string): Promise<void> {
     await this.userService.delete(id);
   }
+
   @UseGuards(JwtAuthGuard, VerifiedUserGuard)
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteSelf(@CurrentUser() user: User): Promise<void> {
     await this.userService.delete(user.user_id);
+  }
+
+  @UseGuards(JwtAuthGuard, VerifiedUserGuard)
+  @Get('me/email')
+  async getMyEmail(@Req() req) {
+    const email = await this.userService.getUserEmail(req.user.user_id);
+    return this.responseService.success(email);
   }
 }
