@@ -1,5 +1,5 @@
 export interface ApiResponse<T = any> {
-  data: T;
-  message: string;
-  code: string;
+    data: T;
+    message: string;
+    code: string;
 }

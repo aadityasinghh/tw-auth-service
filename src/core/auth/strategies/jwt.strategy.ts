@@ -7,52 +7,55 @@ import { Request } from 'express';
 import { UserStatus } from '../../../apis/user/entities/user.entity';
 import { ResponseService } from '../../common/services/response.service';
 import {
-  ResponseCodes,
-  ResponseMessages,
+    ResponseCodes,
+    ResponseMessages,
 } from '../../common/constants/response-messages.constant';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly userService: UserService,
-    private readonly responseService: ResponseService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        // First try to extract from cookie
-        (request: Request) => {
-          const token = request?.cookies?.access_token;
-          if (!token) {
-            return null;
-          }
-          return token;
-        },
-        // Fallback to Authorization Bearer token
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]),
-      ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'superSecretKey'),
-    });
-  }
-
-  async validate(payload: any) {
-    const user = await this.userService.findById(payload.sub);
-
-    if (!user) {
-      return this.responseService.unauthorized(
-        ResponseMessages.USER_NOT_FOUND,
-        ResponseCodes.USER_NOT_FOUND,
-      );
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly userService: UserService,
+        private readonly responseService: ResponseService,
+    ) {
+        super({
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                // First try to extract from cookie
+                (request: Request) => {
+                    const token = request?.cookies?.access_token;
+                    if (!token) {
+                        return null;
+                    }
+                    return token;
+                },
+                // Fallback to Authorization Bearer token
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
+            ignoreExpiration: false,
+            secretOrKey: configService.get<string>(
+                'JWT_SECRET',
+                'superSecretKey',
+            ),
+        });
     }
 
-    if (user.status !== UserStatus.ACTIVE) {
-      return this.responseService.unauthorized(
-        ResponseMessages.ACCOUNT_INACTIVE,
-        ResponseCodes.ACCOUNT_INACTIVE,
-      );
-    }
+    async validate(payload: any) {
+        const user = await this.userService.findById(payload.sub);
 
-    return user;
-  }
+        if (!user) {
+            return this.responseService.unauthorized(
+                ResponseMessages.USER_NOT_FOUND,
+                ResponseCodes.USER_NOT_FOUND,
+            );
+        }
+
+        if (user.status !== UserStatus.ACTIVE) {
+            return this.responseService.unauthorized(
+                ResponseMessages.ACCOUNT_INACTIVE,
+                ResponseCodes.ACCOUNT_INACTIVE,
+            );
+        }
+
+        return user;
+    }
 }

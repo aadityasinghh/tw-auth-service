@@ -5,26 +5,26 @@ import { ResponseCodes } from '../../common/constants/response-messages.constant
 
 @Injectable()
 export class VerifiedUserGuard implements CanActivate {
-  constructor(private readonly responseService: ResponseService) {}
+    constructor(private readonly responseService: ResponseService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user: User = request.user;
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        const user: User = request.user;
 
-    if (!user) {
-      return this.responseService.unauthorized(
-        'User not authenticated',
-        ResponseCodes.UNAUTHORIZED,
-      );
+        if (!user) {
+            return this.responseService.unauthorized(
+                'User not authenticated',
+                ResponseCodes.UNAUTHORIZED,
+            );
+        }
+
+        if (!user.email_verified) {
+            return this.responseService.unauthorized(
+                'Email not verified. Please verify your email before proceeding.',
+                ResponseCodes.UNAUTHORIZED,
+            );
+        }
+
+        return true;
     }
-
-    if (!user.email_verified) {
-      return this.responseService.unauthorized(
-        'Email not verified. Please verify your email before proceeding.',
-        ResponseCodes.UNAUTHORIZED,
-      );
-    }
-
-    return true;
-  }
 }
