@@ -64,7 +64,6 @@ export class AuthController {
         };
 
         response.cookie('access_token', authResult.access_token, cookieOptions);
-
         return this.responseService.success(
             {
                 access_token: authResult.access_token,

@@ -26,11 +26,12 @@ export class NotificationService {
         try {
             const notificationServiceUrl = this.configService.get<string>(
                 'NOTIFICATION_SERVICE_URL',
-                'http://localhost:3000/notifications/send',
             );
-
             await firstValueFrom(
-                this.httpService.post(notificationServiceUrl, notificationData),
+                this.httpService.post(
+                    notificationServiceUrl!,
+                    notificationData,
+                ),
             );
         } catch (error) {
             console.error('Failed to send notification:', error);
