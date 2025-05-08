@@ -1,5 +1,5 @@
 {
-    "name": "booking_landing-auth",
+    "name": "auth-service",
     "version": "0.0.1",
     "description": "",
     "author": "",
@@ -24,7 +24,7 @@
         "migration:run": "npm run build && npx typeorm migration:run -d dist/core/db/db.config.js",
         "migration:revert": "npm run typeorm migration:revert",
         "prepare": "husky",
-        "husky": "npm run format"
+        "husky": "npm run format && npm run lint && npm run build"
     },
     "dependencies": {
         "@nestjs/axios": "^4.0.0",

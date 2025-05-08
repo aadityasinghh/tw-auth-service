@@ -1,3 +1,4 @@
 import { SetMetadata } from '@nestjs/common';
 
-export const ApiKey = () => SetMetadata('apiKey', true);
+export const ApiKey = (): ReturnType<typeof SetMetadata> =>
+    SetMetadata('apiKey', true);

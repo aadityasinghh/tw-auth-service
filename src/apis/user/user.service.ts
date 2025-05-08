@@ -286,10 +286,10 @@ export class UserService {
     async update(
         id: string,
         updateUserDto: UpdateUserDto,
-        user_id: string,
+        userId: string,
     ): Promise<User> {
         // Block email updates completely
-        if (user_id !== id) {
+        if (userId !== id) {
             return this.responseService.unauthorized(
                 ResponseMessages.UNAUTHORIZED_UPDATE,
                 ResponseCodes.UNAUTHORIZED_UPDATE,

@@ -25,6 +25,13 @@ import { ResendOtpDto } from './dto/email-verification.dto';
 import { VerifiedUserGuard } from '../../core/auth/guards/verified-user.guard';
 import { ResponseService } from '../../core/common/services/response.service';
 import { ResponseMessages } from '../../core/common/constants/response-messages.constant';
+import { ApiResponse } from '../../core/common/interfaces/api-response.interface';
+import { Request } from 'express';
+
+// Extended Request interface that includes the user property
+interface RequestWithUser extends Request {
+    user: User;
+}
 
 @Controller('users')
 export class UserController {
@@ -35,7 +42,9 @@ export class UserController {
 
     @Post('register')
     @HttpCode(HttpStatus.OK)
-    async register(@Body() registerUserDto: RegisterUserDto) {
+    async register(
+        @Body() registerUserDto: RegisterUserDto,
+    ): Promise<ApiResponse<null>> {
         await this.userService.register(registerUserDto);
         return this.responseService.success(
             null,
@@ -44,7 +53,9 @@ export class UserController {
     }
 
     @Post('verify-email')
-    async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    async verifyEmail(
+        @Body() verifyEmailDto: VerifyEmailDto,
+    ): Promise<ApiResponse<UserResponseDto>> {
         const user = await this.userService.verifyEmail(verifyEmailDto);
         return this.responseService.success(
             plainToClass(UserResponseDto, user),
@@ -54,7 +65,9 @@ export class UserController {
 
     @Post('resend-otp')
     @HttpCode(HttpStatus.OK)
-    async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+    async resendOtp(
+        @Body() resendOtpDto: ResendOtpDto,
+    ): Promise<ApiResponse<null>> {
         await this.userService.resendOtp(resendOtpDto);
         return this.responseService.success(
             null,
@@ -64,7 +77,7 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard, VerifiedUserGuard)
     @Get()
-    async findAll() {
+    async findAll(): Promise<ApiResponse<UserResponseDto[]>> {
         const users = await this.userService.findAll();
         return this.responseService.success(
             users.map((user) => plainToClass(UserResponseDto, user)),
@@ -74,7 +87,9 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard, VerifiedUserGuard)
     @Get(':id')
-    async findOne(@Param('id') id: string) {
+    async findOne(
+        @Param('id') id: string,
+    ): Promise<ApiResponse<UserResponseDto>> {
         const user = await this.userService.findById(id);
         return this.responseService.success(
             plainToClass(UserResponseDto, user),
@@ -84,7 +99,7 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard, VerifiedUserGuard)
     @Get('profile/me')
-    getProfile(@CurrentUser() user: User) {
+    getProfile(@CurrentUser() user: User): ApiResponse<UserResponseDto> {
         return this.responseService.success(
             plainToClass(UserResponseDto, user),
             ResponseMessages.PROFILE_RETRIEVAL_SUCCESS,
@@ -96,8 +111,8 @@ export class UserController {
     async update(
         @Param('id') id: string,
         @Body() updateUserDto: UpdateUserDto,
-        @Req() req,
-    ) {
+        @Req() req: RequestWithUser,
+    ): Promise<ApiResponse<UserResponseDto>> {
         const updatedUser = await this.userService.update(
             id,
             updateUserDto,
@@ -111,7 +126,9 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard, VerifiedUserGuard)
     @Patch(':id/verify-aadhaar')
-    async verifyAadhaar(@Param('id') id: string) {
+    async verifyAadhaar(
+        @Param('id') id: string,
+    ): Promise<ApiResponse<UserResponseDto>> {
         const updatedUser = await this.userService.verifyAadhaar(id);
         return this.responseService.success(
             plainToClass(UserResponseDto, updatedUser),
@@ -124,7 +141,7 @@ export class UserController {
     async changeStatus(
         @Param('id') id: string,
         @Body('status') status: UserStatus,
-    ) {
+    ): Promise<ApiResponse<UserResponseDto>> {
         const updatedUser = await this.userService.changeStatus(id, status);
         return this.responseService.success(
             plainToClass(UserResponseDto, updatedUser),
@@ -148,7 +165,9 @@ export class UserController {
 
     @UseGuards(JwtAuthGuard, VerifiedUserGuard)
     @Get('me/email')
-    async getMyEmail(@Req() req) {
+    async getMyEmail(
+        @Req() req: RequestWithUser,
+    ): Promise<ApiResponse<{ email: string }>> {
         const email = await this.userService.getUserEmail(req.user.user_id);
         return this.responseService.success(email);
     }

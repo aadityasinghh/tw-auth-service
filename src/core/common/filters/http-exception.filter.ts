@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ResponseCodes } from '../constants/response-messages.constant';
-import { ApiResponse } from '../interfaces/api-response.interface';
+// import { ApiResponse } from '../interfaces/api-response.interface';
 
 interface ErrorResponse {
     message: string | string[];

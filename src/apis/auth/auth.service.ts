@@ -75,7 +75,9 @@ export class AuthService {
             );
         }
 
-        const { password: _, ...result } = user;
+        // Using a proper variable name to indicate we're intentionally ignoring it
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: passwordIgnored, ...result } = user;
         return result;
     }
 
