@@ -6,8 +6,8 @@ import { ApiModule } from './apis/api.module';
 import { AuthModule } from './apis/auth/auth.module';
 
 @Module({
-  imports: [CoreModule, ApiModule, AuthModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [CoreModule, ApiModule, AuthModule],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

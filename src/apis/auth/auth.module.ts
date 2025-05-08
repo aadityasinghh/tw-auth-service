@@ -14,31 +14,34 @@ import { HttpModule } from '@nestjs/axios';
 import { ResponseService } from 'src/core/common/services/response.service';
 
 @Module({
-  imports: [
-    UserModule,
-    PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'superSecretKey'),
-        signOptions: { expiresIn: '24h' },
-      }),
-    }),
-    TypeOrmModule.forFeature([VerificationToken]),
-    HttpModule,
-  ],
-  controllers: [AuthController],
-  providers: [
-    AuthService,
-    LocalStrategy,
-    JwtStrategy,
-    NotificationService,
-    ResponseService
+    imports: [
+        UserModule,
+        PassportModule,
+        ConfigModule,
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                secret: configService.get<string>(
+                    'JWT_SECRET',
+                    'superSecretKey',
+                ),
+                signOptions: { expiresIn: '24h' },
+            }),
+        }),
+        TypeOrmModule.forFeature([VerificationToken]),
+        HttpModule,
+    ],
+    controllers: [AuthController],
+    providers: [
+        AuthService,
+        LocalStrategy,
+        JwtStrategy,
+        NotificationService,
+        ResponseService,
 
-    // VerificationToken,
-  ],
-  exports: [AuthService],
+        // VerificationToken,
+    ],
+    exports: [AuthService],
 })
 export class AuthModule {}

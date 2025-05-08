@@ -11,14 +11,14 @@ import { NotificationService } from '../notification/notification.service';
 import { ResponseService } from 'src/core/common/services/response.service';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    TypeOrmModule.forFeature([User, VerificationToken]),
-    HttpModule,
-    ConfigModule,
-  ],
-  providers: [UserService, NotificationService, ResponseService],
-  controllers: [UserController],
-  exports: [UserService],
+    imports: [
+        DatabaseModule,
+        TypeOrmModule.forFeature([User, VerificationToken]),
+        HttpModule,
+        ConfigModule,
+    ],
+    providers: [UserService, NotificationService, ResponseService],
+    controllers: [UserController],
+    exports: [UserService],
 })
 export class UserModule {}
