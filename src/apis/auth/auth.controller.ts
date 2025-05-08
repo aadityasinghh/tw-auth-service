@@ -88,7 +88,7 @@ export class AuthController {
 
     return this.responseService.success(
       responseWithUserId,
-      'Token validated successfully',
+      ResponseMessages.TOKEN_VALIDATION_SUCCESS,
     );
   }
 
@@ -97,7 +97,7 @@ export class AuthController {
   logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('access_token', { path: '/' });
 
-    return this.responseService.success(null, 'Logout successful');
+    return this.responseService.success(null, ResponseMessages.LOGOUT_SUCCESS);
   }
 
   @Post('forgot-password')
@@ -107,7 +107,7 @@ export class AuthController {
     await this.authService.initiatePasswordReset(forgotPasswordDto.email);
     return this.responseService.success(
       null,
-      'If your email is registered with us, you will receive a password reset OTP.',
+      ResponseMessages.IF_EMAIL_IS_REGISTERED,
     );
   }
 
@@ -117,7 +117,7 @@ export class AuthController {
     await this.authService.resetPassword(resetPasswordDto);
     return this.responseService.success(
       null,
-      'Password has been reset successfully. You can now login with your new password.',
+      ResponseMessages.PASSWORD_RESET_SUCCESS,
     );
   }
 
@@ -129,7 +129,10 @@ export class AuthController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     await this.authService.changePassword(user.user_id, changePasswordDto);
-    return this.responseService.success(null, 'Password changed successfully.');
+    return this.responseService.success(
+      null,
+      ResponseMessages.PASSWORD_CHANGE_SUCCESS,
+    );
   }
 
   // @UseGuards(ApiKeyGuard, ThrottlerGuard)
@@ -141,7 +144,7 @@ export class AuthController {
     const email = await this.authService.getUserEmail(userId);
     return this.responseService.success(
       email,
-      'User email retrieved successfully',
+      ResponseMessages.EMAIL_RETRIEVAL_SUCCESS,
     );
   }
 }

@@ -9,6 +9,9 @@ export const ResponseMessages = {
   OTP_INVALID: 'Invalid OTP',
   OTP_EXPIRED: 'OTP has expired',
   PASSWORD_RESET_FAILED: 'Failed to process password reset request',
+  TOKEN_VALIDATION_FAILED: 'Token validation failed',
+  TOKEN_VALIDATION_SUCCESS: 'Token validated successfully',
+  LOGOUT_SUCCESS: 'Logout successful',
 
   // User related messages
   USER_NOT_FOUND: 'User not found',
@@ -20,6 +23,31 @@ export const ResponseMessages = {
   EMAIL_ALREADY_VERIFIED: 'Email is already verified',
   EMAIL_VERIFICATION_SENT: 'Verification email sent successfully',
   EMAIL_VERIFICATION_FAILED: 'Failed to send verification email',
+  IF_EMAIL_IS_REGISTERED:
+    'If your email is registered with us, you will receive a password reset OTP.',
+  OTP_VERIFICATION_SUCCESS: 'OTP verified successfully',
+  OTP_VERIFICATION_FAILED: 'OTP verification failed',
+  PASSWORD_RESET_SUCCESS:
+    'Password has been reset successfully. You can now login with your new password.',
+  PASSWORD_CHANGE_SUCCESS: 'Password changed successfully',
+  PASSWORD_CHANGE_FAILED: 'Failed to change password',
+  EMAIL_RETRIEVAL_SUCCESS: 'Email retrieved successfully',
+  EMAIL_RETRIEVAL_FAILED: 'Failed to retrieve email',
+  REGISTRATION_INITIATED_SUCCESS:
+    'Registration initiated. Please check your email for the verification OTP',
+  EMAIL_VERIFICATION_SUCCESS:
+    'Email verified successfully. Your account is now active.',
+  VERIFICATION_OTP_SENT: 'Verification OTP sent. Please check your email.',
+  USERS_RETRIEVAL_SUCCESS: 'All users retrieved successfully',
+  USER_RETRIEVAL_SUCCESS: 'User retrieved successfully',
+  PROFILE_RETRIEVAL_SUCCESS: 'Profile retrieved successfully',
+  AADHAR_VERIFICATION_SUCCESS: 'Aadhaar verification successful',
+  EMAIL_CANNOT_BE_UPDATED:
+    'Email cannot be updated. Please contact support if you need to change your email.',
+  ACCOUNT_NOT_VERIFIED: 'Account not verified. Please verify your email first.',
+  AADHAAR_NOT_PROVIDED: 'Aadhaar number not provided',
+  CANNOT_ACTIVATE_UNVERIFIED: 'Cannot activate account. Email not verified.',
+  UNAUTHORIZED_UPDATE: 'You are not authorized to update this user',
 
   // Api related messages
   API_KEY_MISSING: 'API key is missing',
@@ -56,6 +84,11 @@ export const ResponseCodes = {
   AADHAAR_EXISTS: 'AADHAAR_EXISTS',
   EMAIL_ALREADY_VERIFIED: 'EMAIL_ALREADY_VERIFIED',
   EMAIL_VERIFICATION_FAILED: 'EMAIL_VERIFICATION_FAILED',
+  EMAIL_CANNOT_BE_UPDATED: 'EMAIL_CANNOT_BE_UPDATED',
+  ACCOUNT_NOT_VERIFIED: 'ACCOUNT_NOT_VERIFIED',
+  AADHAAR_NOT_PROVIDED: 'AADHAAR_NOT_PROVIDED',
+  CANNOT_ACTIVATE_UNVERIFIED: 'CANNOT_ACTIVATE_UNVERIFIED',
+  UNAUTHORIZED_UPDATE: 'UNAUTHORIZED_UPDATE',
 
   // Api related codes
   API_KEY_MISSING: 'API_KEY_MISSING',

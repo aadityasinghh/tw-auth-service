@@ -287,13 +287,15 @@ export class UserService {
   ): Promise<User> {
     // Block email updates completely
     if (user_id !== id) {
-      throw new UnauthorizedException(
-        'You are not authorized to update this user',
+      return this.responseService.unauthorized(
+        ResponseMessages.UNAUTHORIZED_UPDATE,
+        ResponseCodes.UNAUTHORIZED_UPDATE,
       );
     }
     if (updateUserDto.email) {
-      throw new BadRequestException(
-        'Email cannot be updated. Please contact support if you need to change your email.',
+      return this.responseService.badRequest(
+        ResponseMessages.EMAIL_CANNOT_BE_UPDATED,
+        ResponseCodes.EMAIL_CANNOT_BE_UPDATED,
       );
     }
 
@@ -307,8 +309,10 @@ export class UserService {
       console.log('user', user);
       // Check if user is verified before allowing updates
       if (user.status === UserStatus.PENDING) {
-        throw new BadRequestException(
-          'Account not verified. Please verify your email first.',
+        // await queryRunner.rollbackTransaction();
+        return this.responseService.badRequest(
+          ResponseMessages.ACCOUNT_NOT_VERIFIED,
+          ResponseCodes.ACCOUNT_NOT_VERIFIED,
         );
       }
 
@@ -321,7 +325,11 @@ export class UserService {
           where: { phone_number: updateUserDto.phone_number },
         });
         if (phoneExists) {
-          throw new ConflictException('Phone number already exists');
+          // await queryRunner.rollbackTransaction();
+          return this.responseService.conflict(
+            ResponseMessages.PHONE_EXISTS,
+            ResponseCodes.PHONE_EXISTS,
+          );
         }
       }
 
@@ -334,7 +342,11 @@ export class UserService {
           where: { aadhaar_number: updateUserDto.aadhar_number },
         });
         if (aadhaarExists) {
-          throw new ConflictException('Aadhaar number already exists');
+          // await queryRunner.rollbackTransaction();
+          return this.responseService.conflict(
+            ResponseMessages.AADHAAR_EXISTS,
+            ResponseCodes.AADHAAR_EXISTS,
+          );
         }
       }
 
@@ -359,10 +371,10 @@ export class UserService {
       // console.log('updateduser', updatedUser);
       // console.log(originalUser.email, originalUser.name);
       await queryRunner.commitTransaction();
-      await this.notificationService.sendUserDetailsUpdateEmail(
-        user.email,
-        user.name,
-      );
+      // await this.notificationService.sendUserDetailsUpdateEmail(
+      //   user.email,
+      //   user.name,
+      // );
       return updatedUser;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -383,13 +395,19 @@ export class UserService {
 
       // Check if user is verified before allowing updates
       if (user.status === UserStatus.PENDING) {
-        throw new BadRequestException(
-          'Account not verified. Please verify your email first.',
+        // await queryRunner.rollbackTransaction();
+        return this.responseService.badRequest(
+          ResponseMessages.ACCOUNT_NOT_VERIFIED,
+          ResponseCodes.ACCOUNT_NOT_VERIFIED,
         );
       }
 
       if (!user.aadhaar_number) {
-        throw new BadRequestException('Aadhaar number not provided');
+        // await queryRunner.rollbackTransaction();
+        return this.responseService.badRequest(
+          ResponseMessages.AADHAAR_NOT_PROVIDED,
+          ResponseCodes.AADHAAR_NOT_PROVIDED,
+        );
       }
 
       // In a real application, you would call an external Aadhaar verification service here
@@ -417,8 +435,10 @@ export class UserService {
 
       // Don't allow changing to ACTIVE if email isn't verified
       if (status === UserStatus.ACTIVE && !user.email_verified) {
-        throw new BadRequestException(
-          'Cannot activate account. Email not verified.',
+        // await queryRunner.rollbackTransaction();
+        return this.responseService.badRequest(
+          ResponseMessages.CANNOT_ACTIVATE_UNVERIFIED,
+          ResponseCodes.CANNOT_ACTIVATE_UNVERIFIED,
         );
       }
 

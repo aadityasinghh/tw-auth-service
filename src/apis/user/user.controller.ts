@@ -11,6 +11,7 @@ import {
   Request,
   UseGuards,
   Req,
+  Res,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -40,7 +41,7 @@ export class UserController {
     await this.userService.register(registerUserDto);
     return this.responseService.success(
       null,
-      'Registration initiated. Please check your email for the verification OTP.',
+      ResponseMessages.REGISTRATION_INITIATED_SUCCESS,
     );
   }
 
@@ -49,7 +50,7 @@ export class UserController {
     const user = await this.userService.verifyEmail(verifyEmailDto);
     return this.responseService.success(
       plainToClass(UserResponseDto, user),
-      'Email verified successfully. Your account is now active.',
+      ResponseMessages.EMAIL_VERIFICATION_SUCCESS,
     );
   }
 
@@ -59,7 +60,7 @@ export class UserController {
     await this.userService.resendOtp(resendOtpDto);
     return this.responseService.success(
       null,
-      'Verification OTP sent. Please check your email.',
+      ResponseMessages.VERIFICATION_OTP_SENT,
     );
   }
 
@@ -69,7 +70,7 @@ export class UserController {
     const users = await this.userService.findAll();
     return this.responseService.success(
       users.map((user) => plainToClass(UserResponseDto, user)),
-      'Users retrieved successfully',
+      ResponseMessages.USERS_RETRIEVAL_SUCCESS,
     );
   }
 
@@ -79,7 +80,7 @@ export class UserController {
     const user = await this.userService.findById(id);
     return this.responseService.success(
       plainToClass(UserResponseDto, user),
-      'User retrieved successfully',
+      ResponseMessages.USER_RETRIEVAL_SUCCESS,
     );
   }
 
@@ -88,7 +89,7 @@ export class UserController {
   getProfile(@CurrentUser() user: User) {
     return this.responseService.success(
       plainToClass(UserResponseDto, user),
-      'Profile retrieved successfully',
+      ResponseMessages.PROFILE_RETRIEVAL_SUCCESS,
     );
   }
 
@@ -116,7 +117,7 @@ export class UserController {
     const updatedUser = await this.userService.verifyAadhaar(id);
     return this.responseService.success(
       plainToClass(UserResponseDto, updatedUser),
-      'Aadhaar verified successfully',
+      ResponseMessages.AADHAR_VERIFICATION_SUCCESS,
     );
   }
 
@@ -129,7 +130,7 @@ export class UserController {
     const updatedUser = await this.userService.changeStatus(id, status);
     return this.responseService.success(
       plainToClass(UserResponseDto, updatedUser),
-      'User status updated successfully',
+      ResponseMessages.USER_UPDATED,
     );
   }
 
