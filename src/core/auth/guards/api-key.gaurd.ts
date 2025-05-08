@@ -17,7 +17,7 @@ export class ApiKeyGuard implements CanActivate {
         private responseService: ResponseService,
     ) {}
 
-    canActivate(context: ExecutionContext): boolean {
+    canActivate(context: ExecutionContext): boolean | never {
         const isApiKeyRequired = this.reflector.get<boolean>(
             'apiKey',
             context.getHandler(),
@@ -28,7 +28,7 @@ export class ApiKeyGuard implements CanActivate {
         }
 
         const request = context.switchToHttp().getRequest<Request>();
-        const apiKey = request.headers['x-api-key'] as string;
+        const apiKey = request.headers['x-api-key'] as string | undefined;
 
         if (!apiKey) {
             return this.responseService.unauthorized(
@@ -38,6 +38,15 @@ export class ApiKeyGuard implements CanActivate {
         }
 
         const validApiKey = this.configService.get<string>('API_KEY');
+
+        if (!validApiKey) {
+            // This is a server-side configuration error
+            console.error('API_KEY is not configured in environment variables');
+            return this.responseService.unauthorized(
+                'Internal server error',
+                ResponseCodes.UNAUTHORIZED,
+            );
+        }
 
         if (apiKey !== validApiKey) {
             return this.responseService.unauthorized(

@@ -16,6 +16,18 @@ import {
     ResponseMessages,
 } from '../../core/common/constants/response-messages.constant';
 
+interface UserWithoutPassword extends Omit<User, 'password'> {}
+
+interface TokenPayload {
+    email: string;
+    sub: string;
+}
+
+interface LoginResponse {
+    access_token: string;
+    user: UserWithoutPassword;
+}
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -28,7 +40,10 @@ export class AuthService {
         private readonly responseService: ResponseService,
     ) {}
 
-    async validateUser(email: string, password: string): Promise<any> {
+    async validateUser(
+        email: string,
+        password: string,
+    ): Promise<UserWithoutPassword | never> {
         const user = await this.userService.findByEmail(email, true);
 
         if (!user) {
@@ -64,15 +79,17 @@ export class AuthService {
         return result;
     }
 
-    login(user: any) {
-        const payload = { email: user.email, sub: user.user_id };
+    login(user: UserWithoutPassword): LoginResponse {
+        const payload: TokenPayload = { email: user.email, sub: user.user_id };
         return {
             access_token: this.jwtService.sign(payload),
             user,
         };
     }
 
-    async validateUserCredentials(loginUserDto: LoginUserDto) {
+    async validateUserCredentials(
+        loginUserDto: LoginUserDto,
+    ): Promise<UserWithoutPassword | never> {
         return this.validateUser(loginUserDto.email, loginUserDto.password);
     }
 

@@ -1,6 +1,4 @@
-import {
-    Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
@@ -209,7 +207,7 @@ export class UserService {
             const user = await this.findByEmail(email);
 
             if (!user) {
-                await queryRunner.rollbackTransaction();
+                // await queryRunner.rollbackTransaction();
                 return this.responseService.notFound(
                     'User',
                     `with email ${email}`,
@@ -217,7 +215,7 @@ export class UserService {
             }
 
             if (user.email_verified) {
-                await queryRunner.rollbackTransaction();
+                // await queryRunner.rollbackTransaction();
                 return this.responseService.badRequest(
                     ResponseMessages.EMAIL_ALREADY_VERIFIED,
                     ResponseCodes.EMAIL_ALREADY_VERIFIED,
@@ -238,7 +236,7 @@ export class UserService {
             );
 
             if (!verificationToken) {
-                await queryRunner.rollbackTransaction();
+                // await queryRunner.rollbackTransaction();
                 return this.responseService.unauthorized(
                     ResponseMessages.OTP_INVALID,
                     ResponseCodes.OTP_INVALID,
@@ -247,7 +245,7 @@ export class UserService {
 
             // Check if token is expired
             if (new Date() > verificationToken.expires_at) {
-                await queryRunner.rollbackTransaction();
+                // await queryRunner.rollbackTransaction();
                 return this.responseService.unauthorized(
                     ResponseMessages.OTP_EXPIRED,
                     ResponseCodes.OTP_EXPIRED,

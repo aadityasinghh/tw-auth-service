@@ -29,7 +29,12 @@ import { ApiKey } from '../../core/auth/decorators/api-key-decorator';
 // import { ApiKeyGuard } from '../../core/auth/guards/api-key.gaurd';
 import { ResponseService } from '../../core/common/services/response.service';
 import { ResponseMessages } from '../../core/common/constants/response-messages.constant';
+import { ApiResponse } from '../../core/common/interfaces/api-response.interface';
 // import { ThrottlerGuard } from '@nestjs/';
+
+interface TokenValidationResponse extends UserResponseDto {
+    userId: string;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -46,7 +51,7 @@ export class AuthController {
         @Body() loginUserDto: LoginUserDto,
         @CurrentUser() user: User,
         @Res({ passthrough: true }) response: Response,
-    ) {
+    ): ApiResponse<{ access_token: string; user: UserResponseDto }> {
         const authResult = this.authService.login(user);
 
         // Set the JWT token as an HTTP-only cookie
@@ -72,7 +77,9 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Get('validate')
     @HttpCode(HttpStatus.OK)
-    validateToken(@Req() request: Request) {
+    validateToken(
+        @Req() request: Request,
+    ): ApiResponse<TokenValidationResponse> {
         // The user will be attached to the request by the JwtAuthGuard
         const user = request.user as User;
 
@@ -80,7 +87,7 @@ export class AuthController {
         const userResponse = plainToClass(UserResponseDto, user);
 
         // Add the userId property required by the tour service
-        const responseWithUserId = {
+        const responseWithUserId: TokenValidationResponse = {
             ...userResponse,
             userId: user.user_id, // Ensure the tour service gets the user ID in the format it expects
         };
@@ -93,7 +100,7 @@ export class AuthController {
 
     @Post('logout')
     @HttpCode(HttpStatus.OK)
-    logout(@Res({ passthrough: true }) response: Response) {
+    logout(@Res({ passthrough: true }) response: Response): ApiResponse<null> {
         response.clearCookie('access_token', { path: '/' });
 
         return this.responseService.success(
@@ -105,7 +112,9 @@ export class AuthController {
     @Post('forgot-password')
     @HttpCode(HttpStatus.OK)
     // @UseGuards(ThrottlerGuard)
-    async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    async forgotPassword(
+        @Body() forgotPasswordDto: ForgotPasswordDto,
+    ): Promise<ApiResponse<null>> {
         await this.authService.initiatePasswordReset(forgotPasswordDto.email);
         return this.responseService.success(
             null,
@@ -115,7 +124,9 @@ export class AuthController {
 
     @Post('reset-password')
     @HttpCode(HttpStatus.OK)
-    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    async resetPassword(
+        @Body() resetPasswordDto: ResetPasswordDto,
+    ): Promise<ApiResponse<null>> {
         await this.authService.resetPassword(resetPasswordDto);
         return this.responseService.success(
             null,
@@ -129,7 +140,7 @@ export class AuthController {
     async changePassword(
         @CurrentUser() user: User,
         @Body() changePasswordDto: ChangePasswordDto,
-    ) {
+    ): Promise<ApiResponse<null>> {
         await this.authService.changePassword(user.user_id, changePasswordDto);
         return this.responseService.success(
             null,
@@ -142,7 +153,9 @@ export class AuthController {
     @Get('user-email/:id')
     @HttpCode(HttpStatus.OK)
     @ApiKey() // Custom decorator to enforce API key
-    async getUserEmail(@Param('id') userId: string) {
+    async getUserEmail(
+        @Param('id') userId: string,
+    ): Promise<ApiResponse<{ email: string }>> {
         const email = await this.authService.getUserEmail(userId);
         return this.responseService.success(
             email,

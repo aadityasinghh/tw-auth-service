@@ -4,12 +4,19 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../../apis/user/user.service';
 import { Request } from 'express';
-import { UserStatus } from '../../../apis/user/entities/user.entity';
+import { User, UserStatus } from '../../../apis/user/entities/user.entity';
 import { ResponseService } from '../../common/services/response.service';
 import {
     ResponseCodes,
     ResponseMessages,
 } from '../../common/constants/response-messages.constant';
+
+interface JwtPayload {
+    email: string;
+    sub: string;
+    iat?: number;
+    exp?: number;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -39,7 +46,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: any) {
+    async validate(payload: JwtPayload): Promise<User> {
         const user = await this.userService.findById(payload.sub);
 
         if (!user) {

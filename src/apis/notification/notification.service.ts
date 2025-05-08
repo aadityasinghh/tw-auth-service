@@ -3,9 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ResponseService } from '../../core/common/services/response.service';
-import {
-    ResponseCodes,
-} from '../../core/common/constants/response-messages.constant';
+import { ResponseCodes } from '../../core/common/constants/response-messages.constant';
 
 export interface NotificationContent {
     type: string;

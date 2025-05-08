@@ -7,9 +7,9 @@ import { ResponseCodes } from '../../common/constants/response-messages.constant
 export class VerifiedUserGuard implements CanActivate {
     constructor(private readonly responseService: ResponseService) {}
 
-    async canActivate(context: ExecutionContext): Promise<boolean> {
+    async canActivate(context: ExecutionContext): Promise<boolean | never> {
         const request = context.switchToHttp().getRequest();
-        const user: User = request.user;
+        const user = request.user as User | undefined;
 
         if (!user) {
             return this.responseService.unauthorized(

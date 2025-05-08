@@ -7,15 +7,29 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ResponseCodes } from '../constants/response-messages.constant';
+import { ApiResponse } from '../interfaces/api-response.interface';
+
+interface ErrorResponse {
+    message: string | string[];
+    code: string;
+    data: null;
+}
+
+type HttpExceptionResponse = {
+    message: string | string[];
+    statusCode?: number;
+    error?: string;
+    code?: string;
+};
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-    catch(exception: any, host: ArgumentsHost) {
+    catch(exception: unknown, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
 
         let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let responseBody: any = {
+        let responseBody: ErrorResponse = {
             data: null,
             message: 'Internal server error',
             code: ResponseCodes.FAILED,
@@ -24,7 +38,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         // Handle HttpExceptions (including our custom ones)
         if (exception instanceof HttpException) {
             status = exception.getStatus();
-            const exceptionResponse = exception.getResponse();
+            const exceptionResponse =
+                exception.getResponse() as HttpExceptionResponse;
 
             // Check if this is our custom format
             if (
@@ -33,14 +48,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 'message' in exceptionResponse &&
                 'code' in exceptionResponse
             ) {
-                responseBody = exceptionResponse;
+                responseBody = {
+                    data: null,
+                    message: exceptionResponse.message,
+                    code: exceptionResponse.code || '',
+                };
             } else {
                 // NestJS's standard HttpException
                 responseBody.message =
                     typeof exceptionResponse === 'object'
-                        ? (exceptionResponse as any).message ||
-                          'An error occurred'
-                        : exceptionResponse;
+                        ? exceptionResponse.message || 'An error occurred'
+                        : String(exceptionResponse);
 
                 // Set appropriate code based on status
                 switch (status) {
