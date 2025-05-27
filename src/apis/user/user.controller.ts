@@ -44,10 +44,11 @@ export class UserController {
     @HttpCode(HttpStatus.OK)
     async register(
         @Body() registerUserDto: RegisterUserDto,
-    ): Promise<ApiResponse<null>> {
-        await this.userService.register(registerUserDto);
+    ): Promise<ApiResponse<string | void>> {
+        const email = await this.userService.register(registerUserDto);
+        console.log('Email:', email);
         return this.responseService.success(
-            null,
+            email,  // No need for plainToClass here since email is already a string
             ResponseMessages.REGISTRATION_INITIATED_SUCCESS,
         );
     }

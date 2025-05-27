@@ -72,7 +72,7 @@ export class UserService {
     }
 
     // First step: Register and send OTP
-    async register(registerUserDto: RegisterUserDto): Promise<void> {
+    async register(registerUserDto: RegisterUserDto): Promise<void | string> {
         // Start transaction
         const queryRunner = this.connection.createQueryRunner();
 
@@ -94,7 +94,7 @@ export class UserService {
                 // If user exists but email not verified, resend verification
                 await queryRunner.commitTransaction();
                 await this.sendVerificationOtp(registerUserDto.email);
-                return;
+                return registerUserDto.email;
             }
 
             const salt = await bcrypt.genSalt();
@@ -116,6 +116,7 @@ export class UserService {
             // Send verification OTP
             await queryRunner.commitTransaction();
             await this.sendVerificationOtp(savedUser.email);
+            return savedUser.email;
         } catch (error) {
             await queryRunner.rollbackTransaction();
             throw error;
