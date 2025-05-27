@@ -48,7 +48,7 @@ export class UserController {
         const email = await this.userService.register(registerUserDto);
         console.log('Email:', email);
         return this.responseService.success(
-            email,  // No need for plainToClass here since email is already a string
+            email, // No need for plainToClass here since email is already a string
             ResponseMessages.REGISTRATION_INITIATED_SUCCESS,
         );
     }
